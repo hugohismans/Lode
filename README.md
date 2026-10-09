@@ -15,11 +15,11 @@ Le jeu tient dans un seul fichier, `index.html`, sans dépendance ni build.
 
 | Mobile | Clavier | Action |
 | --- | --- | --- |
-| Croix directionnelle (glisser le pouce, diagonales acceptées) | Flèches, ZQSD ou WASD | Courir, grimper, se suspendre, lâcher une corde |
+| Joystick dynamique : posez le pouce n'importe où dans la moitié gauche et glissez (le cercle apparaît sous le pouce et le suit) | Flèches, ZQSD ou WASD | Courir, grimper, se suspendre, lâcher une corde |
 | Bouton CREUSE gauche / droit | J / K | Creuser la brique en bas à gauche / à droite |
 | Bouton pause | Échap ou P | Pause, recommencer le niveau |
 
-En portrait, la loupe dans la barre du haut bascule entre vue zoomée (la caméra suit le joueur) et vue entière.
+En paysage, le plateau occupe toute la hauteur de l'écran et les commandes sont posées par-dessus en transparence. En portrait, la loupe dans la barre du haut bascule entre vue zoomée (la caméra suit le joueur) et vue entière.
 
 ## Mode infini
 
@@ -38,6 +38,10 @@ Le style se choisit sur l'écran titre ou dans le menu pause, et le choix est m�
 
 - **1983** : l'esprit de la version Apple II d'origine. La mine est dessinée dans une image de 220 × 140 pixels (10 pixels par case), avec une palette de six couleurs (fond noir, briques orange, blocs bleus, échelles et cordes blanches), puis agrandie sans lissage, avec des lignes de balayage façon écran cathodique. Polices pixel, boutons carrés.
 - **Moderne** : sprites cartoon de [Kenney.nl](https://kenney.nl) (licence CC0, libres de droits) : un aventurier pour le joueur, des zombies pour les gardes, des briques, de la pierre, des échelles en bois et des pièces d'or qui tournent. Il y a aussi un ciel en parallaxe, des éclats de brique quand on creuse et des étincelles quand on ramasse l'or.
+
+## Sons
+
+Tous les sons sont synthétisés en direct par le navigateur (WebAudio), sans fichier audio : pas, barreaux d'échelle, corde, sifflement de chute et impact à l'atterrissage, creusage, trou qui se rebouche, garde piégé, qui ressort, écrasé ou qui réapparaît, lingot ramassé, échelle de sortie, jingle de départ, fanfare de victoire, mort et fin de partie. Le style 1983 sonne comme une puce d'ordinateur 8 bits (ondes carrées, son sec), le style Moderne avec des ondes plus douces et un léger écho.
 
 ## Règles
 

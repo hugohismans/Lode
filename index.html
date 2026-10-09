@@ -33,7 +33,8 @@
   --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
   --body:"Nunito",system-ui,sans-serif;
   --body-size:15px; --label-size:10px; --hud-size:15px; --btn-size:17px; --logo-size:76px;
-  --pad:180px; --dig:84px;
+  --pad:180px; --dig:84px; --stick:150px;
+  --stick-ring:rgba(255,255,255,.22); --stick-edge:rgba(255,255,255,.8); --stick-knob:rgba(255,255,255,.88); --pill:rgba(255,255,255,.85);
   color-scheme:light;
 }
 :root[data-skin="retro"]{
@@ -44,6 +45,7 @@
   --accent:#1f7dff; --guard:#d04dff;
   --btn:#000000; --btn-hi:#1f7dff; --btn-ink:#f2f2f2; --btn-shadow:#1f7dff;
   --pad-face:transparent; --pad-hub:#000000; --arrow:#f2f2f2; --arrow-on:#ffd400;
+  --stick-ring:rgba(31,125,255,.25); --stick-edge:rgba(242,242,242,.85); --stick-knob:rgba(242,242,242,.9); --pill:rgba(0,0,0,.72);
   --frame:#1f7dff; --overlay:rgba(0,0,0,.72); --raise:transparent;
   --radius:0px; --radius-sm:0px;
   --display:"Press Start 2P","Courier New",monospace;
@@ -83,7 +85,14 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #hud .hud-btns{display:flex;gap:8px;flex:none}
 /* In landscape iOS keeps the top screen edge for its own swipe gestures and swallows taps there,
    so the buttons move down into the right-hand column, above the dig buttons. */
-body.land #hud .hud-btns{position:absolute;z-index:2;top:max(64px, calc(var(--hud-h, 40px) + 22px));right:calc(env(safe-area-inset-right, 0px) + 14px);gap:12px}
+body.land #hud{position:absolute;left:0;right:0;top:env(safe-area-inset-top, 0px);z-index:3;background:none;border:none;box-shadow:none;
+  padding:6px 0 0;justify-content:center;pointer-events:none}
+body.land #hud .stats{flex:none;background:var(--pill);padding:5px 14px;border-radius:999px;column-gap:16px;flex-wrap:nowrap}
+:root[data-skin="retro"] body.land #hud .stats{border-radius:0;border:2px solid var(--frame)}
+:root[data-skin="retro"] body.land #hud{border:none}
+body.land #hud .hud-btns{position:absolute;z-index:2;top:64px;right:calc(env(safe-area-inset-right, 0px) + 14px);gap:12px;pointer-events:auto}
+body.land .icon-btn{opacity:.8}
+body.land .dig{opacity:.62}
 body.land .icon-btn{width:46px;height:46px}
 body.land .icon-btn svg{width:22px;height:22px}
 #btn-zoom{display:none}
@@ -91,28 +100,32 @@ body.portrait #btn-zoom{display:grid}
 
 /* Stage */
 #stage{flex:none;display:flex;justify-content:center;align-items:center;padding:8px 0;position:relative}
-body.land #stage{flex:1}
+body.land #stage{position:absolute;inset:0;padding:0}
 #game{display:block;border:3px solid var(--frame);border-radius:calc(var(--radius) / 2);background:#000;box-shadow:0 6px 0 var(--raise)}
 
 /* Controls */
 #controls{flex:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 22px 18px}
-body.land #controls{position:absolute;left:0;right:0;bottom:0;top:52px;flex:none;pointer-events:none;
-  padding:0 14px 14px;align-items:flex-end}
-body.land #actions{gap:12px}
+body.land #controls{position:absolute;left:0;right:0;bottom:0;top:0;flex:none;pointer-events:none;padding:0;z-index:2}
+body.land #stick-zone{position:absolute;left:0;top:0;bottom:0;width:50%}
+body.land #actions{position:absolute;right:16px;bottom:16px;gap:12px}
 body.land #controls > *{pointer-events:auto}
-#dpad{width:var(--pad);height:var(--pad);position:relative;border-radius:50%;flex:none;
-  background:radial-gradient(circle at 50% 50%, var(--pad-hub) 0 16%, var(--pad-face) 17% 100%);border:1px solid var(--line);box-shadow:0 6px 0 var(--raise)}
-#dpad .arm{position:absolute;width:34%;height:34%;display:grid;place-items:center;border-radius:var(--radius-sm);transition:background .06s}
-#dpad .arm svg{width:46%;height:46%;fill:var(--arrow)}
-#dpad .up{left:33%;top:3%} #dpad .down{left:33%;bottom:3%} #dpad .left{top:33%;left:3%} #dpad .right{top:33%;right:3%}
-#dpad .arm.on{background:var(--btn-hi)}
-#dpad .arm.on svg{fill:var(--arrow-on)}
-:root[data-skin="retro"] #dpad{background:none;border:none;box-shadow:none;border-radius:0}
-:root[data-skin="retro"] #dpad::after{content:"";position:absolute;left:34%;top:34%;width:32%;height:32%;background:#000;border:3px solid var(--line)}
-:root[data-skin="retro"] #dpad .arm{background:#000;border:3px solid var(--line)}
-:root[data-skin="retro"] #dpad .up{top:0} :root[data-skin="retro"] #dpad .down{bottom:0}
-:root[data-skin="retro"] #dpad .left{left:0} :root[data-skin="retro"] #dpad .right{right:0}
-:root[data-skin="retro"] #dpad .arm.on{background:var(--btn-hi)}
+/* Floating joystick: the ring appears under the thumb and follows it if it slides past the edge. */
+#stick-zone{position:relative;flex:1;align-self:stretch;min-width:0;min-height:var(--stick)}
+#stick{position:absolute;left:0;top:0;width:var(--stick);height:var(--stick);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle, transparent 0 52%, var(--stick-ring) 53% 100%);border:2px solid var(--stick-edge);transition:opacity .15s}
+#stick.idle{opacity:.4}
+#stick-knob{position:absolute;left:30%;top:30%;width:40%;height:40%;border-radius:50%;background:var(--stick-knob);
+  box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#stick .arr{position:absolute;width:0;height:0;border:7px solid transparent;opacity:.75}
+#stick .arr[data-d="up"]{left:calc(50% - 7px);top:4px;border-bottom-color:var(--stick-edge);border-top:0}
+#stick .arr[data-d="down"]{left:calc(50% - 7px);bottom:4px;border-top-color:var(--stick-edge);border-bottom:0}
+#stick .arr[data-d="left"]{top:calc(50% - 7px);left:4px;border-right-color:var(--stick-edge);border-left:0}
+#stick .arr[data-d="right"]{top:calc(50% - 7px);right:4px;border-left-color:var(--stick-edge);border-right:0}
+#stick .arr.on[data-d="up"]{border-bottom-color:var(--arrow-on);opacity:1}
+#stick .arr.on[data-d="down"]{border-top-color:var(--arrow-on);opacity:1}
+#stick .arr.on[data-d="left"]{border-right-color:var(--arrow-on);opacity:1}
+#stick .arr.on[data-d="right"]{border-left-color:var(--arrow-on);opacity:1}
+:root[data-skin="retro"] #stick-knob{border-radius:0;box-shadow:none}
 #actions{display:flex;gap:14px;align-items:flex-end;flex:none}
 .dig{width:var(--dig);height:var(--dig);border-radius:50%;border:none;cursor:pointer;padding:0;display:grid;place-items:center;
   background:radial-gradient(circle at 35% 30%, var(--brick-hi), var(--brick) 55%, var(--brick-lo));box-shadow:0 5px 0 var(--brick-lo);
@@ -216,11 +229,11 @@ body.land #controls > *{pointer-events:auto}
   </header>
   <main id="stage"><canvas id="game" width="528" height="336" aria-label="Plateau de jeu"></canvas></main>
   <div id="controls">
-    <div id="dpad" aria-label="Croix directionnelle">
-      <div class="arm up" data-d="up"><svg viewBox="0 0 10 10"><path d="M5 1 9 8H1z"/></svg></div>
-      <div class="arm down" data-d="down"><svg viewBox="0 0 10 10"><path d="M5 9 1 2h8z"/></svg></div>
-      <div class="arm left" data-d="left"><svg viewBox="0 0 10 10"><path d="M1 5 8 1v8z"/></svg></div>
-      <div class="arm right" data-d="right"><svg viewBox="0 0 10 10"><path d="M9 5 2 9V1z"/></svg></div>
+    <div id="stick-zone" aria-label="Zone de déplacement : posez le pouce n'importe où et glissez">
+      <div id="stick" class="idle">
+        <i class="arr" data-d="up"></i><i class="arr" data-d="right"></i><i class="arr" data-d="down"></i><i class="arr" data-d="left"></i>
+        <div id="stick-knob"></div>
+      </div>
     </div>
     <div id="actions">
       <button class="dig" id="dig-l" aria-label="Creuser à gauche"><div><svg viewBox="0 0 10 10"><path d="M1 9V3h2v4h4v2z"/><path d="M4 1h5v5z"/></svg><span>CREUSE</span></div></button>
@@ -688,39 +701,87 @@ const store = {
   set(k, v) { try { localStorage.setItem('lode.' + k, JSON.stringify(v)); } catch (e) {} }
 };
 
-/* ---------- sound ---------- */
+/* ---------- sound ----------
+   Everything is synthesised with WebAudio, no sound files. The 1983 style uses square waves and
+   stays dry like a home computer chip; the modern style uses softer waves and a short echo. */
 const Sound = (() => {
-  let ac = null, on = store.get('sound', true);
+  let ac = null, master = null, echo = null, noiseBuf = null, whistle = null, flip = false, on = store.get('sound', true);
   function ensure() {
-    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
-    if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+    if (!ac) {
+      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+      master = ac.createGain(); master.gain.value = .9; master.connect(ac.destination);
+      const d = ac.createDelay(.5), fb = ac.createGain(), wet = ac.createGain();
+      d.delayTime.value = .14; fb.gain.value = .3; wet.gain.value = .22;
+      echo = ac.createGain(); echo.connect(d); d.connect(fb).connect(d); d.connect(wet).connect(master);
+    }
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
   }
-  function tone(f, dur, type = 'square', vol = .07, slide = 0, delay = 0) {
+  const modern = () => SKIN === 'modern';
+  function out() { const g = ac.createGain(); g.connect(master); if (modern()) g.connect(echo); return g; }
+  function note(f, dur, { type, vol = .07, to = 0, at = 0, attack = .005 } = {}) {
     if (!on || !ac) return;
-    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + dur);
+    const t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || (modern() ? 'triangle' : 'square');
+    o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(out()); o.start(t); o.stop(t + dur + .03);
+  }
+  function noise(dur, { vol = .08, freq = 1200, to = 0, q = .7, kind = 'lowpass', at = 0 } = {}) {
+    if (!on || !ac) return;
+    if (!noiseBuf) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = ac.currentTime + at, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = noiseBuf; f.type = kind; f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t); if (to) f.frequency.exponentialRampToValueAtTime(to, t + dur);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
+    s.connect(f).connect(g).connect(out()); s.start(t, Math.random() * .5); s.stop(t + dur + .03);
   }
-  function noise(dur, vol = .08) {
-    if (!on || !ac) return;
-    const n = (ac.sampleRate * dur) | 0, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    const s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
-    s.buffer = buf; g.gain.value = vol; f.type = 'lowpass'; f.frequency.value = 1400;
-    s.connect(f).connect(g).connect(ac.destination); s.start();
-  }
+  const seq = (notes, step, o = {}) => notes.forEach((f, i) => { if (f) note(f, step * 1.6, { ...o, at: (o.at || 0) + i * step }); });
   return {
     ensure, get on() { return on; },
-    toggle() { on = !on; store.set('sound', on); return on; },
-    gold() { tone(880, .06); tone(1320, .09, 'square', .06, 0, .05); },
-    dig() { noise(.22); },
-    trap() { tone(240, .16, 'triangle', .14, -140); },
-    kill() { tone(180, .3, 'sawtooth', .06, -120); },
-    die() { tone(700, .7, 'square', .07, -620); },
-    reveal() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .12, 'square', .06, 0, i * .09)); },
-    win() { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .14, 'square', .06, 0, i * .08)); }
+    toggle() { on = !on; store.set('sound', on); if (!on) this.fallStop(); return on; },
+    step() { flip = !flip; if (modern()) noise(.05, { vol: .045, freq: flip ? 900 : 700, kind: 'bandpass', q: 1.2 }); else note(flip ? 120 : 100, .03, { vol: .035 }); },
+    climb() { flip = !flip; if (modern()) note(flip ? 420 : 380, .05, { type: 'sine', vol: .05 }); else note(flip ? 700 : 620, .025, { vol: .03 }); },
+    rope() { noise(.09, { vol: .035, freq: 2400, kind: 'bandpass', q: 3 }); },
+    fallStart() {                       // a whistle that drops while the runner falls
+      if (!on || !ac || whistle) return;
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = modern() ? 'sine' : 'square';
+      o.frequency.setValueAtTime(modern() ? 1100 : 900, t); o.frequency.exponentialRampToValueAtTime(modern() ? 260 : 180, t + 1.6);
+      g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(modern() ? .05 : .03, t + .05);
+      o.connect(g).connect(out()); o.start(t); whistle = { o, g };
+    },
+    fallStop() {
+      if (!whistle) return;
+      const t = ac.currentTime, g = whistle.g.gain;
+      g.cancelScheduledValues(t); g.setValueAtTime(Math.max(.0001, g.value), t); g.exponentialRampToValueAtTime(.0001, t + .05);
+      whistle.o.stop(t + .07); whistle = null;
+    },
+    land(height) { note(modern() ? 110 : 90, .14, { type: 'sine', vol: .12, to: 50 }); noise(.12, { vol: .05 + Math.min(.07, height * .012), freq: 600 }); },
+    dig() { noise(.28, { vol: .09, freq: 1800, to: 300 }); note(140, .12, { type: 'sine', vol: .08, to: 70, at: .02 }); },
+    refill() { noise(.5, { vol: .03, freq: 400, to: 150 }); },
+    gold() {
+      if (modern()) { note(1318, .12, { type: 'sine', vol: .07 }); note(1976, .3, { type: 'sine', vol: .06, at: .06 }); }
+      else { note(988, .06); note(1319, .1, { at: .06 }); }
+    },
+    guardGold() { note(660, .06, { vol: .025 }); },
+    trap() { note(300, .25, { vol: .1, to: 120 }); noise(.1, { vol: .05, freq: 800 }); },
+    escape() { note(200, .18, { vol: .04, to: 400 }); },
+    kill() { noise(.35, { vol: .1, freq: 1400, to: 200 }); note(110, .3, { vol: .09, to: 45, type: 'sawtooth' }); },
+    respawn() { note(220, .2, { vol: .05, to: 660 }); },
+    start() { seq([523, 659, 784], .07, { vol: .06 }); },
+    reveal() { seq([523, 659, 784, 1047, 1319], .08, { vol: .06 }); noise(.6, { vol: .02, freq: 6000, kind: 'highpass', at: .1 }); },
+    win() {                             // fanfare, then the extra-life flourish
+      seq([392, 523, 659, 784, 0, 659, 784, 1047], .1, { vol: .07 });
+      seq([196, 262, 330, 392, 0, 330, 392, 523], .1, { vol: .04, type: modern() ? 'sine' : 'triangle' });
+      seq([1319, 1568, 2093], .06, { vol: .045, at: .95 });
+    },
+    die() { this.fallStop(); seq([784, 740, 698, 659, 622, 587], .07, { vol: .06 }); note(330, .7, { vol: .06, to: 80, at: .45 }); },
+    gameOver() { seq([392, 0, 370, 0, 349, 0, 330], .16, { vol: .06 }); note(165, 1.2, { vol: .05, at: 1.1, type: 'sine' }); },
+    ui() { note(880, .03, { vol: .03 }); }
   };
 })();
 function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
@@ -752,6 +813,7 @@ function campaignData(i) {
 function loadLevel(i) { G.mode = 'campaign'; G.level = i; loadData(campaignData(i)); }
 function loadData(d) {
   const src = d.map;
+  Sound.fallStop();
   G.cur = d; G.tiles = []; G.gold = new Set(); G.holes = new Map(); G.guards = []; G.revealed = false;
   for (let y = 0; y < H; y++) {
     const row = [];
@@ -875,8 +937,14 @@ function poseFor(a, moved, dir) {
 function updatePlayer(dt) {
   const p = G.player;
   if (p.digT > 0) { p.digT -= dt; p.pose = 'dig'; return; }
-  if (isFalling(p)) { stepFall(p, dt); p.pose = 'fall'; pickup(); return; }
+  if (isFalling(p)) {
+    p.fallT = (p.fallT || 0) + dt;
+    if (p.fallT > .12) Sound.fallStart();
+    stepFall(p, dt); p.pose = 'fall'; pickup(); return;
+  }
+  if (p.fallT) { Sound.fallStop(); if (p.fallT > .12) Sound.land(p.fallT * FALL); p.fallT = 0; }
   p.falling = false;
+  const px0 = p.x + p.ox, py0 = p.y + p.oy;
 
   if (input.dig && tryDig(p, input.dig)) { input.dig = 0; return; }
 
@@ -890,6 +958,9 @@ function updatePlayer(dt) {
   const moved = !!used;
   if (moved) p.lastMove = used;
   p.pose = poseFor(p, moved, moved ? used : null);
+  // one footstep, rung or rope sound per cell travelled
+  p.stepAcc = (p.stepAcc || 0) + Math.abs(p.x + p.ox - px0) + Math.abs(p.y + p.oy - py0);
+  if (p.stepAcc >= 1) { p.stepAcc -= 1; if (p.pose === 'climb') Sound.climb(); else if (p.pose === 'rope') Sound.rope(); else Sound.step(); }
   pickup();
   if (G.revealed && p.y === 0) levelComplete();
 }
@@ -959,7 +1030,7 @@ function updateHoles(dt) {
   for (const [k, h] of G.holes) {
     h.t += dt;
     if (h.phase === 'dig' && h.t >= DIG_TIME) { h.phase = 'open'; h.t = 0; G.distDirty = true; }
-    else if (h.phase === 'open' && h.t >= HOLE_OPEN) { h.phase = 'fill'; h.t = 0; }
+    else if (h.phase === 'open' && h.t >= HOLE_OPEN) { h.phase = 'fill'; h.t = 0; Sound.refill(); }
     else if (h.phase === 'fill' && h.t >= HOLE_FILL) {
       G.holes.delete(k); G.distDirty = true;
       const p = G.player;
@@ -1032,7 +1103,7 @@ function decide(g) {
   const k = g.y * W + g.x;
   if (k !== g.lastCell) {
     g.lastCell = k;
-    if (!g.gold && G.gold.has(k)) { G.gold.delete(k); g.gold = true; g.goldTimer = 4 + ((Math.random() * 14) | 0); }
+    if (!g.gold && G.gold.has(k)) { G.gold.delete(k); g.gold = true; Sound.guardGold(); g.goldTimer = 4 + ((Math.random() * 14) | 0); }
     else if (g.gold && --g.goldTimer <= 0 && tile(g.x, g.y) === ' ' && !G.gold.has(k) && supported(g) && G.tiles[g.y][g.x] !== 'S') {
       G.gold.add(k); g.gold = false;
     }
@@ -1053,7 +1124,7 @@ function decide(g) {
 }
 
 function updateGuard(g, dt) {
-  if (g.hidden) { g.hidden = Math.max(0, g.hidden - dt); return; }
+  if (g.hidden) { g.hidden = Math.max(0, g.hidden - dt); if (!g.hidden) Sound.respawn(); return; }
   if (g.avoidT > 0) g.avoidT -= dt;
   const s = G.guardSpeed * dt;
   if (g.trapped) {
@@ -1067,7 +1138,7 @@ function updateGuard(g, dt) {
     g.oy -= s * .8;
     if (g.oy < -.5) { g.y--; g.oy += 1; g.entered = true; }
     if (g.entered && g.oy <= 0) {
-      g.oy = 0; g.entered = false; g.climbing = false; g.escaping = true;
+      g.oy = 0; g.entered = false; g.climbing = false; g.escaping = true; Sound.escape();
       const p = G.player;
       g.escDir = p.x + p.ox >= g.x ? 1 : -1;
       if (!passable(tile(g.x + g.escDir, g.y))) g.escDir = -g.escDir;
@@ -1161,7 +1232,7 @@ function update(dt) {
     G.timer += dt;
     if (G.timer > 1.5) {
       G.lives--; updateHud();
-      if (G.lives <= 0) { saveBest(); G.state = 'over'; showOver(); }
+      if (G.lives <= 0) { saveBest(); G.state = 'over'; Sound.gameOver(); showOver(); }
       else loadData(G.cur);
     }
     return;
@@ -1203,19 +1274,16 @@ const input = {
 };
 function poke() {
   Sound.ensure();
-  if (G.state === 'ready' && overlayHidden()) G.state = 'play';
+  if (G.state === 'ready' && overlayHidden()) { G.state = 'play'; Sound.start(); }
 }
-const dpad = document.getElementById('dpad');
-let padId = null;
-/* The pad reads the thumb's angle. The current direction holds until the thumb is 12° past the
-   diagonal, so a thumb resting near the boundary does not flicker between two directions; within
-   20° of a diagonal the neighbouring direction is offered as a fallback. */
+/* Direction from the thumb's offset to the joystick centre. The current direction holds until
+   the thumb is 12° past the diagonal, so a thumb resting near the boundary does not flicker;
+   within 25° of a diagonal the neighbouring direction is offered as a fallback. */
 const PAD_DIRS = { right: 0, down: 90, left: 180, up: -90 };
 const angDiff = (a, b) => ((a - b + 540) % 360) - 180;
-function readPad(e) {
-  const r = dpad.getBoundingClientRect();
-  const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-  if (Math.hypot(dx, dy) < r.width * .12) { input.touch = null; input.touchAlt = null; }
+const zone = document.getElementById('stick-zone'), stick = document.getElementById('stick'), knob = document.getElementById('stick-knob');
+function setDirFromVector(dx, dy, dead) {
+  if (Math.hypot(dx, dy) < dead) { input.touch = null; input.touchAlt = null; }
   else {
     const a = Math.atan2(dy, dx) * 180 / Math.PI;
     let main = input.touch;
@@ -1231,12 +1299,44 @@ function readPad(e) {
     }
     input.touch = main; input.touchAlt = alt;
   }
-  for (const el of dpad.children) el.classList.toggle('on', el.dataset.d === input.touch);
+  for (const el of stick.querySelectorAll('.arr')) el.classList.toggle('on', el.dataset.d === input.touch);
 }
-dpad.addEventListener('pointerdown', e => { e.preventDefault(); padId = e.pointerId; try { dpad.setPointerCapture(padId); } catch (_) {} readPad(e); poke(); });
-dpad.addEventListener('pointermove', e => { if (e.pointerId === padId) readPad(e); });
-function padUp(e) { if (e.pointerId !== padId) return; padId = null; input.touch = input.touchAlt = null; for (const el of dpad.children) el.classList.remove('on'); }
-dpad.addEventListener('pointerup', padUp); dpad.addEventListener('pointercancel', padUp); dpad.addEventListener('lostpointercapture', padUp);
+let stickId = null, stickBase = { x: 0, y: 0 };
+const stickR = () => stick.offsetWidth / 2;
+function placeStick() { const R = stickR(); stick.style.transform = `translate(${stickBase.x - R}px, ${stickBase.y - R}px)`; }
+function stickHome() {
+  const r = zone.getBoundingClientRect(), R = stickR(), land = document.body.classList.contains('land');
+  stickBase = land ? { x: Math.min(r.width / 2, R + 34), y: r.height - R - 30 } : { x: r.width / 2, y: r.height / 2 };
+  placeStick(); knob.style.transform = ''; stick.classList.add('idle');
+}
+const zoneXY = e => { const r = zone.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+function readStick(e) {
+  const R = stickR(), p = zoneXY(e), reach = R * .85;
+  let dx = p.x - stickBase.x, dy = p.y - stickBase.y, d = Math.hypot(dx, dy);
+  if (d > reach) {                       // drag the ring along behind a thumb that slides past its edge
+    stickBase.x += dx / d * (d - reach); stickBase.y += dy / d * (d - reach);
+    dx = p.x - stickBase.x; dy = p.y - stickBase.y; d = reach;
+    placeStick();
+  }
+  const k = Math.min(d, R * .5) / (d || 1);
+  knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+  setDirFromVector(dx, dy, R * .16);
+}
+zone.addEventListener('pointerdown', e => {
+  if (stickId !== null) return;
+  e.preventDefault(); stickId = e.pointerId;
+  try { zone.setPointerCapture(stickId); } catch (_) {}
+  stickBase = zoneXY(e); placeStick(); stick.classList.remove('idle');
+  readStick(e); poke();
+});
+zone.addEventListener('pointermove', e => { if (e.pointerId === stickId) readStick(e); });
+function stickUp(e) {
+  if (e.pointerId !== stickId) return;
+  stickId = null; input.touch = input.touchAlt = null;
+  for (const el of stick.querySelectorAll('.arr')) el.classList.remove('on');
+  stickHome();
+}
+for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) zone.addEventListener(ev, stickUp);
 for (const [id, d] of [['dig-l', -1], ['dig-r', 1]]) {
   const b = document.getElementById(id);
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); input.queueDig(d); });
@@ -1255,14 +1355,14 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { const d = KEYMAP[e.code]; if (d) input.keys = input.keys.filter(k => k !== d); });
 addEventListener('blur', () => { input.keys = []; input.touch = null; if (G.state === 'play') togglePause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') togglePause(); });
-document.addEventListener('touchmove', e => { if (!e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (e.cancelable && !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault());
 /* iOS opens its magnifier loupe, double-tap zoom and callouts from the default action of touchstart.
    Cancelling it outside the menus stops all three; pointer events (d-pad, dig, pause) still fire. */
-document.addEventListener('touchstart', e => { if (!e.target.closest('#overlay')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchstart', e => { if (e.cancelable && !e.target.closest('#overlay')) e.preventDefault(); }, { passive: false });
 document.addEventListener('gesturestart', e => e.preventDefault());
-for (const el of document.querySelectorAll('#hud button, #controls, #stage')) el.addEventListener('touchstart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+for (const el of document.querySelectorAll('#hud button, #controls, #stage, #stick-zone')) el.addEventListener('touchstart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
 
 /* ---------- rendering ---------- */
 const cvs = document.getElementById('game'), ctx = cvs.getContext('2d');
@@ -1614,31 +1714,26 @@ function layout() {
   const hh = hud.offsetHeight;
   let tsz, viewW;
   if (land) {
-    // the playfield gets whatever is left between the d-pad column and the dig-button column
+    // full-height playfield; the score pill, joystick and dig buttons float over it
     const cs = getComputedStyle(app);
     const cw = vw - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const ch = vh - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-    const pad = Math.round(Math.max(112, Math.min(165, ch * .42, cw * .17)));
-    const dig = Math.round(Math.max(54, Math.min(78, pad * .46)));
-    const side = Math.max(pad, 2 * dig + 12) + 14 + 10;
-    tsz = Math.floor(Math.min((cw - 2 * side) / W, (ch - hh - 16) / H));
-    tsz = Math.max(10, tsz);
+    tsz = Math.max(10, Math.floor(Math.min(cw / W, (ch - 2) / H)));
     viewW = W * tsz;
-    app.style.setProperty('--pad', pad + 'px');
-    app.style.setProperty('--dig', dig + 'px');
-    controls.style.left = cs.paddingLeft; controls.style.right = cs.paddingRight; controls.style.bottom = cs.paddingBottom;
-    app.style.setProperty('--hud-h', (parseFloat(cs.paddingTop) + hh) + 'px');
+    app.style.setProperty('--stick', Math.round(Math.max(110, Math.min(150, ch * .36))) + 'px');
+    app.style.setProperty('--dig', Math.round(Math.max(58, Math.min(80, ch * .19))) + 'px');
+    for (const k of ['Left', 'Right', 'Top', 'Bottom']) controls.style[k.toLowerCase()] = cs['padding' + k];
   } else {
-    controls.style.left = controls.style.right = controls.style.bottom = '';
+    controls.style.left = controls.style.right = controls.style.bottom = controls.style.top = '';
     const avW = vw - 16, ctrl = Math.min(260, vh * .34), avH = vh - hh - ctrl - 16;
     const fit = Math.floor(Math.min(avW / W, avH / H));
     tsz = G.zoom ? Math.max(fit, Math.min(Math.floor(avH / H), Math.floor(avW / 14))) : fit;
     tsz = Math.max(8, tsz);
     viewW = Math.min(W * tsz, Math.floor(avW / tsz) * tsz);
     if (viewW >= W * tsz - tsz) viewW = W * tsz;
-    const pad = Math.max(130, Math.min(200, vw * .42, ctrl - 20));
-    app.style.setProperty('--pad', pad + 'px');
-    app.style.setProperty('--dig', Math.max(60, Math.min(90, (vw - pad - 70) / 2)) + 'px');
+    const stickSize = Math.max(120, Math.min(160, vw * .36, ctrl - 30));
+    app.style.setProperty('--stick', stickSize + 'px');
+    app.style.setProperty('--dig', Math.max(60, Math.min(84, (vw * .5 - 40) / 2)) + 'px');
   }
   TS = tsz; VIEW_W = viewW;
   DPR = Math.min(3, window.devicePixelRatio || 1);
@@ -1646,6 +1741,7 @@ function layout() {
   cvs.width = Math.round(VIEW_W * DPR); cvs.height = Math.round(H * TS * DPR);
   buildSkin();
   if (G.player) G.camX = clampCam(G.player.x + .5 - viewCols() / 2);
+  if (stickId === null) stickHome();
 }
 addEventListener('resize', layout);
 addEventListener('orientationchange', () => setTimeout(layout, 200));
@@ -1779,7 +1875,8 @@ function goFull() {
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
 }
 function togglePause() {
-  if (G.state === 'play' || G.state === 'ready') { G.paused = G.state; G.state = 'paused'; show('pause'); }
+  Sound.ui();
+  if (G.state === 'play' || G.state === 'ready') { G.paused = G.state; G.state = 'paused'; Sound.fallStop(); show('pause'); }
   else if (G.state === 'paused') { G.state = G.paused; show(null); }
 }
 function showOver() {
