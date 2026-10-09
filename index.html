@@ -73,10 +73,11 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #hud .gold span:last-child{color:var(--gold-shadow)}
 :root[data-skin="retro"] #hud .gold span:last-child{color:var(--gold)}
 #hud .stats{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:3px}
-.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--btn);
+.icon-btn{position:relative;width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--btn);
   border-radius:var(--radius-sm);cursor:pointer;padding:0}
 .icon-btn svg{width:18px;height:18px;fill:none;stroke:var(--btn-ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn:active{background:var(--btn-hi)}
+.icon-btn::after{content:"";position:absolute;inset:-7px -5px}
 #btn-zoom{display:none}
 body.portrait #btn-zoom{display:grid}
 
@@ -1318,7 +1319,12 @@ function showOver() {
 $('btn-play').addEventListener('click', () => startGame(0));
 $('btn-levels').addEventListener('click', () => show('levels'));
 $('btn-help').addEventListener('click', () => show('help'));
-$('btn-pause').addEventListener('click', togglePause);
+// HUD buttons fire on touch-down: iOS drops the click when another finger is on the d-pad
+function tap(el, fn) {
+  el.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); fn(); });
+  el.addEventListener('click', e => { if (e.detail === 0) fn(); });   // keyboard activation
+}
+tap($('btn-pause'), togglePause);
 $('btn-resume').addEventListener('click', togglePause);
 $('btn-restart').addEventListener('click', () => {
   show(null); G.state = 'play'; G.timer = 0; killPlayer(); G.timer = 1.2;
@@ -1327,10 +1333,10 @@ $('btn-menu').addEventListener('click', () => { saveBest(); G.state = 'menu'; sh
 $('btn-next').addEventListener('click', () => { loadLevel(G.level + 1); show(null); });
 $('btn-retry').addEventListener('click', () => { G.lives = 5; G.score = 0; loadLevel(G.level); show(null); });
 for (const b of document.querySelectorAll('[data-go]')) b.addEventListener('click', () => { G.state = 'menu'; show(b.dataset.go); });
-$('btn-sound').addEventListener('click', () => { Sound.ensure(); setSoundIcon(Sound.toggle()); });
+tap($('btn-sound'), () => { Sound.ensure(); setSoundIcon(Sound.toggle()); });
 function setSoundIcon(on) { $('snd-wave').style.opacity = on ? 1 : .15; }
 setSoundIcon(Sound.on);
-$('btn-zoom').addEventListener('click', () => { G.zoom = !G.zoom; store.set('zoom', G.zoom); layout(); });
+tap($('btn-zoom'), () => { G.zoom = !G.zoom; store.set('zoom', G.zoom); layout(); });
 
 for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => setSkin(b.dataset.skin));
 
