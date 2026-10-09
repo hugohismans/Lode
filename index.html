@@ -165,6 +165,27 @@ body.land #controls > *{pointer-events:auto}
 .help li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
 .help canvas{width:30px;height:30px}
 :root[data-skin="retro"] .help canvas,:root[data-skin="retro"] .seg canvas{image-rendering:pixelated}
+.btn.alt{background:var(--accent);color:#fff;border-color:var(--frame);box-shadow:0 5px 0 var(--frame)}
+.btn.alt:active{box-shadow:0 1px 0 var(--frame)}
+:root[data-skin="retro"] .btn.alt{background:#000;color:var(--accent);border-color:var(--accent);box-shadow:4px 4px 0 var(--accent)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.seedbox,.seedcopy{display:flex;flex-direction:column;gap:8px;text-align:left}
+.seedbox{border-top:2px dashed var(--line);padding-top:14px;margin-top:4px}
+.seed-row{display:flex;gap:8px}
+.seed-row .btn{flex:none;padding:10px 14px}
+.seed{flex:1;min-width:0;font:600 calc(var(--btn-size) + 2px)/1.2 var(--display);letter-spacing:.12em;text-transform:uppercase;padding:10px 12px;
+  border:2px solid var(--line);border-radius:var(--radius-sm);background:var(--btn);color:var(--btn-ink);-webkit-user-select:text;user-select:text}
+.seed:focus{outline:3px solid var(--gold);outline-offset:1px}
+#seed-preview{width:100%;max-width:100%;aspect-ratio:22/14;height:auto;border:3px solid var(--frame);border-radius:calc(var(--radius-sm) / 2);background:#000}
+:root[data-skin="retro"] #seed-preview{image-rendering:pixelated}
+.seed-name{font-family:var(--display);font-size:calc(var(--btn-size) + 1px);line-height:1.3}
+.diff{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--display);font-size:calc(var(--btn-size) - 3px);color:var(--ink)}
+.pips{display:inline-flex;gap:2px}
+.pips i{width:7px;height:12px;background:var(--line);border-radius:2px;opacity:.45}
+.pips i.on{opacity:1;background:var(--pip)}
+.pips.t1{--pip:#2fb36d}.pips.t2{--pip:#9bc53d}.pips.t3{--pip:#f2b134}.pips.t4{--pip:#ef7d32}.pips.t5{--pip:#e5383b}
+.lvl .diff{margin-top:4px}
+.lvl .pips i{width:5px;height:9px}
 .row{display:flex;gap:10px}
 .row > *{flex:1}
 @media (max-width:480px){
@@ -180,7 +201,7 @@ body.land #controls > *{pointer-events:auto}
 <div id="app">
   <header id="hud">
     <div class="stats">
-      <div class="stat"><span class="lab">NIV</span><span id="h-level">1</span></div>
+      <div class="stat"><span class="lab" id="h-level-lab">NIV</span><span id="h-level">1</span></div>
       <div class="stat"><span class="lab">SCORE</span><span id="h-score">000000</span></div>
       <div class="stat gold"><span class="lab">OR</span><span id="h-gold">0</span></div>
       <div class="stat lives"><span class="lab">VIES</span><span id="h-lives">5</span></div>
@@ -214,7 +235,8 @@ body.land #controls > *{pointer-events:auto}
         <button data-skin="retro" aria-pressed="false"><canvas width="144" height="72" data-preview="retro"></canvas>1983</button>
         <button data-skin="modern" aria-pressed="false"><canvas width="144" height="72" data-preview="modern"></canvas>Moderne</button>
       </div>
-      <button class="btn primary" id="btn-play">Jouer</button>
+      <button class="btn primary" id="btn-play">Campagne</button>
+      <button class="btn alt" id="btn-infinite">Mode infini</button>
       <div class="row">
         <button class="btn" id="btn-levels">Niveaux</button>
         <button class="btn" id="btn-help">Règles</button>
@@ -224,6 +246,25 @@ body.land #controls > *{pointer-events:auto}
     <section class="panel" id="scr-levels" hidden>
       <h2>Niveaux</h2>
       <div id="level-grid"></div>
+      <button class="btn" data-go="title">Retour</button>
+    </section>
+    <section class="panel" id="scr-infinite" hidden>
+      <h2>Mode infini</h2>
+      <p class="small">Chaque niveau est généré à partir d'une seed et vérifié pour être faisable. La difficulté monte de niveau en niveau.</p>
+      <button class="btn primary" id="btn-inf-new">Nouvelle partie</button>
+      <p class="small" id="inf-best"></p>
+      <div class="seedbox">
+        <label class="seg-label" for="seed-input">Jouer une seed précise</label>
+        <div class="seed-row">
+          <input class="seed" id="seed-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="K7QX-92MD">
+          <button class="btn" id="btn-seed-random">Hasard</button>
+        </div>
+        <canvas id="seed-preview" width="220" height="140" aria-label="Aperçu du niveau"></canvas>
+        <b class="seed-name" id="seed-name"></b>
+        <span class="diff" id="seed-diff"></span>
+        <span class="small" id="seed-stats"></span>
+        <button class="btn" id="btn-seed-play">Jouer cette seed</button>
+      </div>
       <button class="btn" data-go="title">Retour</button>
     </section>
     <section class="panel" id="scr-help" hidden>
@@ -243,6 +284,12 @@ body.land #controls > *{pointer-events:auto}
       <h2>Pause</h2>
       <button class="btn primary" id="btn-resume">Reprendre</button>
       <button class="btn" id="btn-restart">Recommencer le niveau (−1 vie)</button>
+      <div class="seedcopy" id="pause-seed" hidden>
+        <span class="seg-label">Seed de ce niveau</span>
+        <b class="seed-name" id="pause-name"></b>
+        <span class="diff" id="pause-diff"></span>
+        <div class="seed-row"><input class="seed" id="pause-seed-text" readonly aria-label="Seed du niveau"><button class="btn" id="pause-seed-copy">Copier</button></div>
+      </div>
       <p class="seg-label">Style graphique</p>
       <div class="seg" role="group" aria-label="Style graphique">
         <button data-skin="retro" aria-pressed="false">1983</button>
@@ -254,12 +301,19 @@ body.land #controls > *{pointer-events:auto}
       <h2 id="clear-title">Niveau terminé</h2>
       <p class="big-num" id="clear-score">+1500</p>
       <p class="small">Une vie en plus.</p>
+      <p class="small" id="clear-next" hidden>Prochain niveau : <span class="diff" id="clear-next-diff"></span></p>
       <button class="btn primary" id="btn-next">Niveau suivant</button>
     </section>
     <section class="panel" id="scr-over" hidden>
       <h2>Partie terminée</h2>
       <p class="big-num" id="over-score">0</p>
       <p class="small" id="over-note"></p>
+      <div class="seedcopy" id="over-seed" hidden>
+        <span class="seg-label">Seed du dernier niveau</span>
+        <b class="seed-name" id="over-name"></b>
+        <span class="diff" id="over-diff"></span>
+        <div class="seed-row"><input class="seed" id="over-seed-text" readonly aria-label="Seed du niveau"><button class="btn" id="over-seed-copy">Copier</button></div>
+      </div>
       <button class="btn primary" id="btn-retry">Rejouer ce niveau</button>
       <button class="btn" data-go="title">Menu</button>
     </section>
@@ -403,6 +457,229 @@ const LEVELS = [
 ];
 /*END LEVELS*/
 
+/*GEN*/
+/* ---------- seeded level generator ---------- */
+const SEED_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+function normSeed(s) { return String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 12); }
+function fmtSeed(s) { return s.replace(/(.{4})(?=.)/g, '$1-'); }
+function randomSeed() { let s = ''; for (let i = 0; i < 8; i++) s += SEED_CHARS[(Math.random() * SEED_CHARS.length) | 0]; return s; }
+function rngFrom(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909);
+  let a = (h ^ h >>> 16) >>> 0;
+  return () => {
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* Step distances from (sx,sy) over a raw map, the way a runner moves: walk, climb, hang, fall,
+   and (when dig) burn a brick diagonally below and drop into it. Infinity = unreachable. */
+function reachMap(map, sx, sy, revealed, dig) {
+  const T = (x, y) => {
+    if (x < 0 || x >= W || y >= H) return '@';
+    if (y < 0) return ' ';
+    const c = map[y][x];
+    if (c === 'S') return revealed ? 'H' : ' ';
+    if (c === '$' || c === 'P' || c === 'E' || c === 'X') return ' ';
+    return c;
+  };
+  const pass = t => t !== '#' && t !== '@', sup = t => t === '#' || t === '@' || t === 'H';
+  const dist = new Float32Array(W * H).fill(Infinity), seen = new Uint8Array(W * H * 2), q = [];
+  const push = (x, y, h, d) => {
+    const k = (y * W + x) * 2 + h;
+    if (seen[k]) return;
+    seen[k] = 1; q.push(x, y, h, d);
+    if (d < dist[y * W + x]) dist[y * W + x] = d;
+  };
+  push(sx, sy, 0, 0);
+  for (let i = 0; i < q.length; i += 4) {
+    const x = q[i], y = q[i + 1], h = q[i + 2], d = q[i + 3] + 1;
+    const t = h ? ' ' : T(x, y), b = y + 1 >= H ? '@' : T(x, y + 1);
+    if (t !== 'H' && t !== '-' && !(y + 1 >= H || sup(b))) { push(x, y + 1, 0, d); continue; }
+    for (const dx of [-1, 1]) {
+      if (pass(T(x + dx, y))) push(x + dx, y, 0, d);
+      if (dig && y + 1 < H && T(x + dx, y + 1) === '#' && map[y][x + dx] === ' ') push(x + dx, y + 1, 1, d + 2);
+    }
+    if (t === 'H' && y > 0 && pass(T(x, y - 1))) push(x, y - 1, 0, d);
+    if (y + 1 < H && pass(b) && (t === 'H' || b === 'H' || t === '-')) push(x, y + 1, 0, d);
+  }
+  return dist;
+}
+
+/* Checks a map is winnable and measures what makes it hard. */
+function analyseMap(map) {
+  let start = null; const golds = [], guards = [];
+  let traps = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = map[y][x];
+    if (c === 'P') start = [x, y]; else if (c === '$') golds.push([x, y]); else if (c === 'E') guards.push([x, y]); else if (c === 'X') traps++;
+  }
+  if (!start || !golds.length) return null;
+  const at = (d, [x, y]) => d[y * W + x];
+  const fromStart = reachMap(map, start[0], start[1], false, true);
+  const noDig = reachMap(map, start[0], start[1], false, false);
+  const fromGold = [];
+  for (const g of golds) {
+    if (at(fromStart, g) === Infinity) return null;
+    const back = reachMap(map, g[0], g[1], false, true);
+    if (at(back, start) === Infinity) return null;      // never strand the runner after a pickup
+    fromGold.push(back);
+  }
+  const exitD = reachMap(map, start[0], start[1], true, true);
+  let exit = false;
+  for (let x = 0; x < W; x++) if (exitD[x] < Infinity) exit = true;
+  if (!exit) return null;
+  // greedy tour: start -> nearest gold -> ... -> exit
+  let tour = 0, cur = fromStart, left = golds.map((g, i) => i), last = start;
+  while (left.length) {
+    let bi = 0;
+    for (let k = 1; k < left.length; k++) if (at(cur, golds[left[k]]) < at(cur, golds[left[bi]])) bi = k;
+    const gi = left.splice(bi, 1)[0];
+    tour += at(cur, golds[gi]); cur = fromGold[gi]; last = golds[gi];
+  }
+  const out = reachMap(map, last[0], last[1], true, true);
+  let best = Infinity; for (let x = 0; x < W; x++) best = Math.min(best, out[x]);
+  tour += best;
+  // how soon guards can get at the runner (guards walk and climb but never dig)
+  let pressure = 0;
+  for (const e of guards) {
+    const d = at(reachMap(map, e[0], e[1], false, false), start);
+    pressure += d < Infinity ? Math.exp(-d / 12) : .25 * Math.exp(-(Math.abs(e[0] - start[0]) + Math.abs(e[1] - start[1])) / 8);
+  }
+  const digGold = golds.filter(g => at(noDig, g) === Infinity).length;
+  return { golds: golds.length, guards: guards.length, digGold, tour, traps, pressure };
+}
+
+/* Difficulty 1..10. Raw weights come from what kills or slows a runner; the breakpoints are the
+   deciles of the raw score over 4000 random seeds, so each step holds about a tenth of all seeds. */
+const DIFF_CAL = [1.56,3.57,4.6,6.05,7.56,9.04,10.85,12.36,14.45,16.12,20.44];
+function rateLevel(info, speed) {
+  const threat = info.guards * (.7 + (speed - 2.4) * .8);
+  const raw = 1.3 * threat + 1.8 * info.pressure + .5 * info.digGold + .02 * info.tour + .3 * info.traps + .08 * info.golds;
+  let s = 1;
+  if (raw <= DIFF_CAL[0]) s = 1;
+  else if (raw >= DIFF_CAL[10]) s = 10;
+  else for (let i = 0; i < 10; i++) if (raw < DIFF_CAL[i + 1]) { s = 1 + i + (raw - DIFF_CAL[i]) / (DIFF_CAL[i + 1] - DIFF_CAL[i]) * .999; break; }
+  const n = Math.max(1, Math.min(10, Math.round(s)));
+  return { raw, value: s, n, label: DIFF_LABELS[Math.ceil(n / 2) - 1] };
+}
+const DIFF_LABELS = ['Facile', 'Moyen', 'Difficile', 'Expert', 'Infernal'];
+
+const NAME_A = ['Galerie', 'Filon', 'Puits', 'Veine', 'Faille', 'Crypte', 'Caverne', 'Boyau', 'Gisement', 'Tunnel', 'Chambre', 'Fosse', 'Grotte', 'Carrière'];
+const NAME_B = ['des Brumes', 'du Corbeau', 'des Lanternes', 'du Vertige', 'de Cendre', 'des Échos', 'du Roi', 'des Ombres', 'de Fer', 'des Taupes', 'du Silence', 'sans Fond', "d'Argile", 'du Nord', 'des Pendus', 'de Minuit', 'des Rats', 'de Soufre', 'du Gel', 'des Anciens'];
+
+function buildMap(r, t, relax) {
+  const R = (a, b) => a + Math.floor(r() * (b - a + 1)), chance = p => r() < p;
+  const m = Array.from({ length: H }, () => Array(W).fill(' '));
+  const ground = chance(.6) ? '@' : '#';
+  for (let x = 0; x < W; x++) m[H - 1][x] = ground === '#' && chance(.15) ? '@' : ground;
+  const rows = [H - 1];
+  for (let y = H - 1; ;) { y -= R(3, 4); if (y < 2) break; rows.push(y); }
+  if (rows.length < 3) return null;
+  const stoneP = .06 + t * .22, trapP = t * .07;
+  for (let i = 1; i < rows.length; i++) {
+    const y = rows[i];
+    for (let x = chance(.3) ? R(1, 2) : 0; x < W;) {
+      const len = R(3, 10), mat = chance(stoneP) ? '@' : '#';
+      for (let k = 0; k < len && x < W; k++, x++) m[y][x] = mat === '#' && chance(trapP) ? 'X' : mat;
+      if (chance(.5)) x += R(1, 3);
+    }
+  }
+  for (let i = 1; i < rows.length; i++) {                  // ladders between floors
+    const yl = rows[i - 1], yu = rows[i];
+    const n = Math.max(1, Math.min(3 + relax, Math.round(2.6 - t * 1.6 + (r() - .5)) + relax));
+    const used = [];
+    for (let k = 0, tries = 0; k < n && tries < 60; tries++) {
+      const x = R(0, W - 1);
+      if (used.some(u => Math.abs(u - x) < 3)) continue;
+      used.push(x); k++;
+      for (let y = yu; y < yl; y++) m[y][x] = 'H';
+      if (m[yl][x] === ' ' || m[yl][x] === 'X') m[yl][x] = '#';
+    }
+  }
+  for (let i = 1; i < rows.length; i++) {                  // ropes under platforms
+    if (!chance(.35 + t * .25)) continue;
+    const y = rows[i] + 1;
+    if (y >= rows[i - 1] - 1) continue;
+    const x0 = R(0, W - 4), len = R(3, 9);
+    for (let x = x0; x < Math.min(W, x0 + len); x++) if (m[y][x] === ' ') m[y][x] = '-';
+  }
+  const walls = Math.round(t * 2.2 * r());               // low walls that cut floors into rooms
+  for (let k = 0; k < walls; k++) {
+    const i = R(1, rows.length - 1), yl = rows[i - 1], x = R(1, W - 2);
+    const h = R(1, Math.max(1, Math.min(2, yl - rows[i] - 2)));
+    for (let d = 1; d <= h; d++) if (m[yl - d][x] === ' ') m[yl - d][x] = '#';
+  }
+  const top = rows[rows.length - 1], exits = [];       // hidden escape ladder from the top floor
+  for (let x = 0; x < W; x++) {
+    if (m[top][x] !== '#' && m[top][x] !== '@') continue;
+    let clear = true; for (let y = 0; y < top; y++) if (m[y][x] !== ' ') clear = false;
+    if (clear) exits.push(x);
+  }
+  if (!exits.length) return null;
+  const ex = exits[R(0, exits.length - 1)];
+  for (let y = 0; y < top; y++) m[y][ex] = 'S';
+  const standing = (x, y) => y > 0 && y + 1 < H && m[y][x] === ' ' && '#@H'.includes(m[y + 1][x]);
+  const pockets = Math.round(t * 3 * r());            // gold walled in, reached by digging
+  for (let k = 0; k < pockets; k++) {
+    const i = R(1, rows.length - 1), y = rows[i - 1] - 1, x = R(1, W - 2);
+    if (standing(x, y) && m[y][x - 1] === ' ' && m[y][x + 1] === ' ') { m[y][x - 1] = '#'; m[y][x + 1] = '#'; m[y][x] = '$'; }
+  }
+  const vaults = Math.round(t * 3 * r()) + (chance(.3) ? 1 : 0);   // gold sealed under a floor: dig in, drop through
+  for (let k = 0; k < vaults; k++) {
+    const i = R(1, rows.length - 1), y = rows[i], x = R(1, W - 2);
+    if (rows[i - 1] - y < 4 || m[y][x] !== '#' || m[y][x - 1] === 'H' || m[y][x + 1] === 'H') continue;
+    if (m[y + 1][x] !== ' ' || m[y + 1][x - 1] !== ' ' || m[y + 1][x + 1] !== ' ') continue;
+    m[y + 1][x - 1] = '#'; m[y + 1][x + 1] = '#'; m[y + 1][x] = '$';
+  }
+  const cells = [];
+  for (let y = 1; y < H; y++) for (let x = 0; x < W; x++) if (standing(x, y)) cells.push([x, y]);
+  const pick = (list, ok) => {
+    for (let k = 0; k < 80 && list.length; k++) { const i = R(0, list.length - 1), c = list[i]; if (ok(c)) { list.splice(i, 1); return c; } }
+    return null;
+  };
+  const floorCells = cells.filter(([, y]) => y === H - 2);
+  const P = pick(floorCells, () => true);
+  if (!P) return null;
+  m[P[1]][P[0]] = 'P';
+  const goldN = R(5, 7) + Math.round(t * 5);
+  for (let k = 0; k < goldN; k++) {
+    const c = pick(cells, ([x, y]) => m[y][x] === ' ' && m[y][x - 1] !== '$' && m[y][x + 1] !== '$' && Math.abs(x - P[0]) + Math.abs(y - P[1]) > 2);
+    if (c) m[c[1]][c[0]] = '$';
+  }
+  let guardN = Math.max(0, Math.min(6, Math.round(t * 5.6 + r() * 1.2 - .4)));
+  if (t > .12) guardN = Math.max(1, guardN);
+  for (let k = 0; k < guardN; k++) {
+    const c = pick(cells, ([x, y]) => m[y][x] === ' ' && m[y][x - 1] !== 'E' && m[y][x + 1] !== 'E' && Math.abs(x - P[0]) + Math.abs(y - P[1]) >= 9);
+    if (c) m[c[1]][c[0]] = 'E';
+  }
+  return { map: m.map(row => row.join('')), guardSpeed: 2.35 + t * 1.05 + r() * .15 };
+}
+
+/* One seed -> one level, always the same. Variants are tried in a fixed order until one passes. */
+function generateLevel(seed) {
+  seed = normSeed(seed);
+  if (!seed) return null;
+  const t = rngFrom(seed + '/t')();                 // how mean this mine is, 0..1, fixed by the seed
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const r = rngFrom(seed + (attempt ? '/' + attempt : ''));
+    const lv = buildMap(r, t, attempt < 25 ? 0 : attempt < 50 ? 1 : 2);
+    if (!lv) continue;
+    const info = analyseMap(lv.map);
+    if (!info) continue;
+    const nr = rngFrom(seed + '/name');
+    return { seed, name: NAME_A[(nr() * NAME_A.length) | 0] + ' ' + NAME_B[(nr() * NAME_B.length) | 0],
+      map: lv.map, guardSpeed: lv.guardSpeed, info, diff: rateLevel(info, lv.guardSpeed) };
+  }
+  return null;
+}
+/*END GEN*/
+
+
 /* ---------- storage ---------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem('lode.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -455,7 +732,8 @@ const STEP = 1 / 120;
 const G = {
   state: 'menu', level: 0, score: 0, lives: 5, best: store.get('best', 0), unlocked: store.get('unlocked', 1),
   tiles: [], gold: new Set(), holes: new Map(), guards: [], player: null, revealed: false,
-  guardSpeed: 2.6, timer: 0, flash: 0, dist: null, distT: 0, distDirty: true, camX: 0, zoom: store.get('zoom', true)
+  guardSpeed: 2.6, timer: 0, mode: 'campaign', cur: null, depth: 0, next: null,
+  bestInf: store.get('bestInf', 0), bestDepth: store.get('bestDepth', 0), flash: 0, dist: null, distT: 0, distDirty: true, camX: 0, zoom: store.get('zoom', true)
 };
 
 function mkActor(x, y, isGuard) {
@@ -464,9 +742,15 @@ function mkActor(x, y, isGuard) {
     action: null, digT: 0, hidden: 0, stuck: 0, lastCell: -1, want: null, wantAge: 0, lastMove: null };
 }
 
-function loadLevel(i) {
-  const src = LEVELS[i].map;
-  G.level = i; G.tiles = []; G.gold = new Set(); G.holes = new Map(); G.guards = []; G.revealed = false;
+function campaignData(i) {
+  const L = LEVELS[i], guardSpeed = Math.min(3.4, 2.45 + i * .12);
+  if (!L.diff) { const info = analyseMap(L.map); L.diff = info ? rateLevel(info, guardSpeed) : null; }
+  return { name: L.name, map: L.map, guardSpeed, diff: L.diff };
+}
+function loadLevel(i) { G.mode = 'campaign'; G.level = i; loadData(campaignData(i)); }
+function loadData(d) {
+  const src = d.map;
+  G.cur = d; G.tiles = []; G.gold = new Set(); G.holes = new Map(); G.guards = []; G.revealed = false;
   for (let y = 0; y < H; y++) {
     const row = [];
     for (let x = 0; x < W; x++) {
@@ -478,7 +762,7 @@ function loadLevel(i) {
     }
     G.tiles.push(row);
   }
-  G.guardSpeed = Math.min(3.4, 2.45 + i * .12);
+  G.guardSpeed = d.guardSpeed;
   G.timer = 0; G.flash = 0; G.distDirty = true;
   G.camX = clampCam(G.player.x + .5 - viewCols() / 2);
   G.state = 'ready';
@@ -818,6 +1102,29 @@ function updateGuard(g, dt) {
   g.pose = poseFor(g, moved, g.action);
 }
 
+/* ---------- infinite mode ----------
+   Each level is a seed. The run asks for a difficulty that climbs with depth and keeps the
+   random seed whose measured difficulty lands closest to it. */
+const infTarget = depth => Math.min(10, 1.4 + (depth - 1) * .65);
+function pickInfinite(depth) {
+  const target = infTarget(depth);
+  let best = null;
+  for (let i = 0; i < 40; i++) {
+    const lv = generateLevel(randomSeed());
+    if (!lv) continue;
+    const err = Math.abs(lv.diff.value - target);
+    if (!best || err < best.err) best = { lv, err };
+    if (err < .45) break;
+  }
+  return best.lv;
+}
+function loadInfinite(lv, depth) { G.mode = 'infinite'; G.depth = depth; loadData(lv); }
+function startInfinite(lv) {
+  Sound.ensure(); goFull();
+  G.score = 0; G.lives = 5;
+  loadInfinite(lv || pickInfinite(1), 1); show(null);
+}
+
 /* ---------- life & death ---------- */
 function killPlayer() {
   if (G.state !== 'play') return;
@@ -827,10 +1134,14 @@ function killPlayer() {
 function levelComplete() {
   G.state = 'won'; G.timer = 0;
   G.score += 1500; G.lives = Math.min(9, G.lives + 1);
-  G.unlocked = Math.max(G.unlocked, Math.min(LEVELS.length, G.level + 2)); store.set('unlocked', G.unlocked);
+  if (G.mode === 'campaign') { G.unlocked = Math.max(G.unlocked, Math.min(LEVELS.length, G.level + 2)); store.set('unlocked', G.unlocked); }
+  else if (G.depth > G.bestDepth) { G.bestDepth = G.depth; store.set('bestDepth', G.bestDepth); }
   saveBest(); Sound.win(); buzz([30, 30, 30, 30, 80]); updateHud();
 }
-function saveBest() { if (G.score > G.best) { G.best = G.score; store.set('best', G.best); } }
+function saveBest() {
+  if (G.mode === 'infinite') { if (G.score > G.bestInf) { G.bestInf = G.score; store.set('bestInf', G.bestInf); } }
+  else if (G.score > G.best) { G.best = G.score; store.set('best', G.best); }
+}
 
 function update(dt) {
   if (G.state === 'dying') {
@@ -838,15 +1149,15 @@ function update(dt) {
     if (G.timer > 1.5) {
       G.lives--; updateHud();
       if (G.lives <= 0) { saveBest(); G.state = 'over'; showOver(); }
-      else loadLevel(G.level);
+      else loadData(G.cur);
     }
     return;
   }
   if (G.state === 'won') {
     G.timer += dt;
     if (G.timer > 1.2 && overlayHidden()) {
-      if (G.level + 1 >= LEVELS.length) { document.getElementById('end-score').textContent = G.score; show('end'); G.state = 'menu'; }
-      else { show('clear'); }
+      if (G.mode === 'campaign' && G.level + 1 >= LEVELS.length) { document.getElementById('end-score').textContent = G.score; show('end'); G.state = 'menu'; }
+      else showClear();
     }
     return;
   }
@@ -921,6 +1232,7 @@ for (const [id, d] of [['dig-l', -1], ['dig-r', 1]]) {
 }
 const KEYMAP = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', KeyA: 'left', KeyQ: 'left', KeyD: 'right', KeyW: 'up', KeyZ: 'up', KeyS: 'down' };
 addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') return;
   if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(); return; }
   const d = KEYMAP[e.code];
   if (d) { e.preventDefault(); if (!input.keys.includes(d)) input.keys.push(d); poke(); return; }
@@ -1203,7 +1515,10 @@ function draw(now) {
   if (SKIN === 'modern' && atlasReady && mBg) drawModern(now, dt); else drawRetro(now);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (G.flash > 0) { ctx.fillStyle = SKIN === 'modern' ? `rgba(255,236,150,${G.flash * .3})` : `rgba(255,255,255,${G.flash * .18})`; ctx.fillRect(0, 0, VIEW_W, H * TS); }
-  if (G.state === 'ready' && overlayHidden()) banner(LEVELS[G.level].name.toUpperCase(), 'Touchez une commande pour partir', now);
+  if (G.state === 'ready' && overlayHidden()) {
+    const d = G.cur.diff;
+    banner(G.cur.name.toUpperCase(), (d ? `${d.label} ${d.n}/10 · ` : '') + 'touchez une commande pour partir', now);
+  }
 }
 function banner(t1, t2, now) {
   const s = TS, w = VIEW_W, y = H * s / 2, retro = SKIN !== 'modern' || !atlasReady;
@@ -1215,7 +1530,7 @@ function banner(t1, t2, now) {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = retro ? PAL.o : '#1d2742';
   ctx.font = retro ? `${Math.max(9, Math.round(s * .55))}px "Press Start 2P", monospace` : `700 ${Math.max(15, s * .9)}px Fredoka, system-ui, sans-serif`;
-  ctx.fillText(`NIVEAU ${G.level + 1} · ${t1}`, w / 2, y - s * .55, w - 24);
+  ctx.fillText(`${G.mode === 'infinite' ? 'INFINI ' + G.depth : 'NIVEAU ' + (G.level + 1)} · ${t1}`, w / 2, y - s * .55, w - 24);
   ctx.globalAlpha = .6 + .4 * Math.sin(now / 250);
   ctx.fillStyle = retro ? PAL.w : '#5b6888';
   ctx.font = retro ? `${Math.max(14, Math.round(s * .8))}px VT323, monospace` : `800 ${Math.max(12, s * .6)}px Nunito, system-ui, sans-serif`;
@@ -1321,11 +1636,12 @@ addEventListener('orientationchange', () => setTimeout(layout, 200));
 const $ = id => document.getElementById(id);
 let hudCache = '';
 function updateHud(force) {
-  const str = [G.level + 1, G.score, goldLeft(), G.lives].join('|');
+  const str = [G.mode, G.level, G.depth, G.score, goldLeft(), G.lives, SKIN].join('|');
   if (str === hudCache && !force) return;
   hudCache = str;
   const retro = SKIN === 'retro', pad = (n, l) => retro ? String(n).padStart(l, '0') : String(n);
-  $('h-level').textContent = pad(G.level + 1, 3);
+  $('h-level-lab').textContent = G.mode === 'infinite' ? 'INF' : 'NIV';
+  $('h-level').textContent = pad(G.mode === 'infinite' ? G.depth : G.level + 1, 3);
   $('h-score').textContent = String(G.score).padStart(retro ? 7 : 6, '0');
   $('h-gold').textContent = pad(goldLeft(), 2);
   $('h-lives').textContent = pad(G.lives, 3);
@@ -1337,12 +1653,96 @@ function show(name) {
   for (const sec of overlay.querySelectorAll('.panel')) sec.hidden = sec.id !== 'scr-' + name;
   if (name === 'title') $('best').textContent = G.best;
   if (name === 'levels') buildLevelGrid();
+  if (name === 'infinite') openInfinite();
+  if (name === 'pause') fillSeedBox('pause');
 }
+function diffHTML(d) {
+  if (!d) return '';
+  const tier = Math.ceil(d.n / 2);
+  return `<span class="pips t${tier}" aria-hidden="true">${'<i class="on"></i>'.repeat(d.n)}${'<i></i>'.repeat(10 - d.n)}</span><span>${d.n}/10 · ${d.label}</span>`;
+}
+function fillSeedBox(where) {
+  const box = $(where + '-seed'), inf = G.mode === 'infinite' && G.cur && G.cur.seed;
+  box.hidden = !inf;
+  if (!inf) return;
+  $(where + '-seed-text').value = fmtSeed(G.cur.seed);
+  $(where + '-diff').innerHTML = diffHTML(G.cur.diff);
+  $(where + '-name').textContent = G.cur.name;
+}
+function copySeed(input, btn) {
+  const text = input.value, label = btn.dataset.label || (btn.dataset.label = btn.textContent);
+  const done = msg => { btn.textContent = msg; setTimeout(() => { btn.textContent = label; }, 1600); };
+  const fallback = () => {
+    input.focus(); input.select(); input.setSelectionRange(0, text.length);
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    done(ok ? 'Copié !' : 'Sélectionné');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done('Copié !'), fallback);
+  else fallback();
+}
+for (const w of ['pause', 'over']) $(w + '-seed-copy').addEventListener('click', () => copySeed($(w + '-seed-text'), $(w + '-seed-copy')));
+function showClear() {
+  if (G.mode === 'infinite') {
+    G.next = pickInfinite(G.depth + 1);
+    $('clear-title').textContent = `Niveau ${G.depth} terminé`;
+    $('clear-next').hidden = false;
+    $('clear-next-diff').innerHTML = diffHTML(G.next.diff);
+  } else { $('clear-title').textContent = 'Niveau terminé'; $('clear-next').hidden = true; }
+  show('clear');
+}
+
+/* mini map used by the seed preview */
+function drawMini(c, lv) {
+  const g = c.getContext('2d'), u = c.width / W, modern = SKIN === 'modern' && atlasReady;
+  g.imageSmoothingEnabled = modern;
+  if (modern) { const sky = g.createLinearGradient(0, 0, 0, c.height); sky.addColorStop(0, '#9fd6ff'); sky.addColorStop(1, '#e4f4ff'); g.fillStyle = sky; }
+  else g.fillStyle = '#000';
+  g.fillRect(0, 0, c.width, c.height);
+  if (!lv) return;
+  const A = (key, x, y, w, h) => { const [sx, sy, sw, sh] = ATLAS[key]; g.drawImage(atlas, sx, sy, sw, sh, x, y, w, h); };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const ch = lv.map[y][x], px = x * u, py = y * u;
+    if (modern) {
+      if (ch === '#' || ch === 'X') A('brick', px, py, u, u);
+      else if (ch === '@') A('stone', px, py, u, u);
+      else if (ch === 'H') A('ladder', px, py, u, u);
+      else if (ch === '-') A('rope', px, py, u, u / 4);
+      else if (ch === '$') A('coin', px - u * .1, py, u * 1.2, u * 1.2);
+      else if (ch === 'P') A('hero_stand', px, py - u * .25, u * .9, u * 1.25);
+      else if (ch === 'E') A('guard_stand', px, py - u * .25, u * .9, u * 1.25);
+    } else {
+      const bmp = { '#': RB.brick, X: RB.brick, '@': RB.stone, H: RB.ladder, '-': RB.rope, $: RB.gold }[ch];
+      if (bmp) g.drawImage(bmp, px, py, u, u);
+      else if (ch === 'P') g.drawImage(figure('stand', PAL.w, false), px, py, u, u);
+      else if (ch === 'E') g.drawImage(figure('stand', PAL.v, false), px, py, u, u);
+    }
+  }
+}
+const seedInput = $('seed-input');
+function previewSeed() {
+  const sd = normSeed(seedInput.value), lv = sd ? generateLevel(sd) : null;
+  G.preview = lv;
+  drawMini($('seed-preview'), lv);
+  $('seed-name').textContent = lv ? lv.name : sd ? 'Cette seed ne donne pas de niveau jouable' : 'Saisissez une seed';
+  $('seed-diff').innerHTML = lv ? diffHTML(lv.diff) : '';
+  $('seed-stats').textContent = lv ? `${lv.info.golds} lingots · ${lv.info.guards} garde${lv.info.guards > 1 ? 's' : ''}${lv.info.digGold ? ` · ${lv.info.digGold} à déterrer` : ''}` : '';
+  $('btn-seed-play').disabled = !lv;
+}
+function openInfinite() {
+  if (!normSeed(seedInput.value)) seedInput.value = fmtSeed(randomSeed());
+  previewSeed();
+  $('inf-best').textContent = G.bestDepth ? `Record : niveau ${G.bestDepth} · ${G.bestInf} points` : 'Pas encore de record.';
+}
+seedInput.addEventListener('input', previewSeed);
+$('btn-seed-random').addEventListener('click', () => { seedInput.value = fmtSeed(randomSeed()); previewSeed(); });
+$('btn-seed-play').addEventListener('click', () => { if (G.preview) startInfinite(G.preview); });
+$('btn-inf-new').addEventListener('click', () => startInfinite());
+$('btn-infinite').addEventListener('click', () => show('infinite'));
 function buildLevelGrid() {
   const grid = $('level-grid'); grid.innerHTML = '';
   LEVELS.forEach((lv, i) => {
     const b = document.createElement('button'); b.className = 'lvl'; b.disabled = i >= G.unlocked;
-    b.innerHTML = `<b>${i + 1}</b><span>${lv.name}</span>`;
+    b.innerHTML = `<b>${i + 1}</b><span>${lv.name}</span><span class="diff">${diffHTML(campaignData(i).diff)}</span>`;
     b.addEventListener('click', () => startGame(i));
     grid.appendChild(b);
   });
@@ -1366,8 +1766,14 @@ function togglePause() {
 }
 function showOver() {
   $('over-score').textContent = G.score;
-  $('over-note').textContent = G.score >= G.best && G.score > 0 ? 'Nouveau record !' : 'Record : ' + G.best;
-  show('over');
+  if (G.mode === 'infinite') {
+    $('over-note').textContent = `Arrivé au niveau ${G.depth} · record : niveau ${G.bestDepth}, ${G.bestInf} points`;
+    $('btn-retry').textContent = 'Rejouer ce niveau';
+  } else {
+    $('over-note').textContent = G.score >= G.best && G.score > 0 ? 'Nouveau record !' : 'Record : ' + G.best;
+    $('btn-retry').textContent = 'Rejouer ce niveau';
+  }
+  show('over'); fillSeedBox('over');
 }
 $('btn-play').addEventListener('click', () => startGame(0));
 $('btn-levels').addEventListener('click', () => show('levels'));
@@ -1383,15 +1789,15 @@ $('btn-restart').addEventListener('click', () => {
   show(null); G.state = 'play'; G.timer = 0; killPlayer(); G.timer = 1.2;
 });
 $('btn-menu').addEventListener('click', () => { saveBest(); G.state = 'menu'; show('title'); });
-$('btn-next').addEventListener('click', () => { loadLevel(G.level + 1); show(null); });
-$('btn-retry').addEventListener('click', () => { G.lives = 5; G.score = 0; loadLevel(G.level); show(null); });
+$('btn-next').addEventListener('click', () => { if (G.mode === 'infinite') loadInfinite(G.next, G.depth + 1); else loadLevel(G.level + 1); show(null); });
+$('btn-retry').addEventListener('click', () => { G.lives = 5; G.score = 0; loadData(G.cur); show(null); });
 for (const b of document.querySelectorAll('[data-go]')) b.addEventListener('click', () => { G.state = 'menu'; show(b.dataset.go); });
 tap($('btn-sound'), () => { Sound.ensure(); setSoundIcon(Sound.toggle()); });
 function setSoundIcon(on) { $('snd-wave').style.opacity = on ? 1 : .15; }
 setSoundIcon(Sound.on);
 tap($('btn-zoom'), () => { G.zoom = !G.zoom; store.set('zoom', G.zoom); layout(); });
 
-for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => setSkin(b.dataset.skin));
+for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => { setSkin(b.dataset.skin); if (!$('scr-infinite').hidden) previewSeed(); });
 
 /* ---------- main loop ---------- */
 let last = performance.now(), acc = 0;
@@ -1406,7 +1812,11 @@ function frame(now) {
 
 function boot(saved) {
   layout(); drawIcons();
-  if (saved && typeof saved.level === 'number' && saved.level < LEVELS.length) {
+  const lv = saved && saved.mode === 'infinite' && saved.seed ? generateLevel(saved.seed) : null;
+  if (lv) {
+    G.score = saved.score || 0; G.lives = saved.lives || 5;
+    loadInfinite(lv, saved.depth || 1); show(null);
+  } else if (saved && typeof saved.level === 'number' && saved.level < LEVELS.length) {
     G.score = saved.score || 0; G.lives = saved.lives || 5;
     loadLevel(saved.level); show(null);
   } else {
@@ -1414,7 +1824,7 @@ function boot(saved) {
   }
   requestAnimationFrame(frame);
 }
-try { window.claude && window.claude.hot && window.claude.hot.snapshot(() => (G.state === 'menu' ? {} : { level: G.level, score: G.score, lives: G.lives })); } catch (e) {}
+try { window.claude && window.claude.hot && window.claude.hot.snapshot(() => (G.state === 'menu' ? {} : { mode: G.mode, level: G.level, seed: G.cur && G.cur.seed, depth: G.depth, score: G.score, lives: G.lives })); } catch (e) {}
 if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(boot);
 else boot(window.claude && window.claude.hot && window.claude.hot.data);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);

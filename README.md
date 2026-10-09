@@ -21,6 +21,17 @@ Le jeu tient dans un seul fichier, `index.html`, sans dépendance ni build.
 
 En portrait, la loupe dans la barre du haut bascule entre vue zoomée (la caméra suit le joueur) et vue entière.
 
+## Mode infini
+
+À côté de la campagne de 8 niveaux, le mode infini enchaîne des niveaux générés, de plus en plus durs.
+
+- **Une seed = un niveau.** Chaque niveau vient d'un code de 8 caractères (par exemple `K7QX-92MD`). La même seed redonne toujours exactement le même niveau, sur n'importe quel appareil. La casse, les espaces et les tirets ne comptent pas.
+- **Copier une seed.** Dans le menu pause (et sur l'écran de fin de partie), la seed du niveau en cours s'affiche avec un bouton *Copier*.
+- **Jouer une seed précise.** Sur l'écran du mode infini, on peut taper ou coller une seed : un aperçu du niveau s'affiche avec sa difficulté, le nombre de lingots et de gardes.
+- **Niveaux toujours faisables.** Après génération, un solveur vérifie que tout l'or est atteignable (en creusant si besoin), que depuis chaque lingot on peut revenir au départ et que la sortie est accessible. Sinon, une variante est générée, toujours de façon déterministe à partir de la seed.
+- **Difficulté estimée de 1 à 10** (Facile, Moyen, Difficile, Expert, Infernal), calculée sur le niveau réellement généré : nombre et vitesse des gardes, temps qu'ils mettent à atteindre le joueur, lingots qu'il faut déterrer, longueur du parcours, fausses briques. L'échelle est étalonnée sur 4000 seeds : chaque cran contient environ un dixième des niveaux possibles. La campagne est notée avec la même échelle (visible dans l'écran *Niveaux*).
+- **Progression.** La partie infinie vise une difficulté qui monte à chaque niveau (environ 1,5 au premier, 6 au huitième, 10 vers le quinzième) en choisissant des seeds dont la difficulté mesurée s'en approche.
+
 ## Deux styles graphiques
 
 Le style se choisit sur l'écran titre ou dans le menu pause, et le choix est mémorisé.
