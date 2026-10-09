@@ -78,6 +78,12 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .icon-btn svg{width:18px;height:18px;fill:none;stroke:var(--btn-ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn:active{background:var(--btn-hi)}
 .icon-btn::after{content:"";position:absolute;inset:-7px -5px}
+#hud .hud-btns{display:flex;gap:8px;flex:none}
+/* In landscape iOS keeps the top screen edge for its own swipe gestures and swallows taps there,
+   so the buttons move down into the right-hand column, above the dig buttons. */
+body.land #hud .hud-btns{position:absolute;z-index:2;top:max(64px, calc(var(--hud-h, 40px) + 22px));right:calc(env(safe-area-inset-right, 0px) + 14px);gap:12px}
+body.land .icon-btn{width:46px;height:46px}
+body.land .icon-btn svg{width:22px;height:22px}
 #btn-zoom{display:none}
 body.portrait #btn-zoom{display:grid}
 
@@ -179,9 +185,11 @@ body.land #controls > *{pointer-events:auto}
       <div class="stat gold"><span class="lab">OR</span><span id="h-gold">0</span></div>
       <div class="stat lives"><span class="lab">VIES</span><span id="h-lives">5</span></div>
     </div>
-    <button class="icon-btn" id="btn-zoom" aria-label="Zoom"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5 20 20M7.5 10h5M10 7.5v5"/></svg></button>
-    <button class="icon-btn" id="btn-sound" aria-label="Son"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="snd-wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
-    <button class="icon-btn" id="btn-pause" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    <div class="hud-btns">
+      <button class="icon-btn" id="btn-zoom" aria-label="Zoom"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5 20 20M7.5 10h5M10 7.5v5"/></svg></button>
+      <button class="icon-btn" id="btn-sound" aria-label="Son"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="snd-wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
+      <button class="icon-btn" id="btn-pause" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    </div>
   </header>
   <main id="stage"><canvas id="game" width="528" height="336" aria-label="Plateau de jeu"></canvas></main>
   <div id="controls">
@@ -1242,6 +1250,7 @@ function layout() {
     app.style.setProperty('--pad', pad + 'px');
     app.style.setProperty('--dig', dig + 'px');
     controls.style.left = cs.paddingLeft; controls.style.right = cs.paddingRight; controls.style.bottom = cs.paddingBottom;
+    app.style.setProperty('--hud-h', (parseFloat(cs.paddingTop) + hh) + 'px');
   } else {
     controls.style.left = controls.style.right = controls.style.bottom = '';
     const avW = vw - 16, ctrl = Math.min(260, vh * .34), avH = vh - hh - ctrl - 16;
