@@ -461,7 +461,7 @@ const G = {
 function mkActor(x, y, isGuard) {
   return { x, y, ox: 0, oy: 0, isGuard, face: 1, pose: 'stand', falling: false, dropping: false, entered: false,
     trapped: false, trapT: 0, climbing: false, escaping: false, escDir: 1, gold: false, goldTimer: 0,
-    action: null, digT: 0, hidden: 0, stuck: 0, lastCell: -1 };
+    action: null, digT: 0, hidden: 0, stuck: 0, lastCell: -1, want: null, wantAge: 0, lastMove: null };
 }
 
 function loadLevel(i) {
@@ -595,16 +595,47 @@ function updatePlayer(dt) {
   if (input.dig && tryDig(p, input.dig)) { input.dig = 0; return; }
 
   const { main, alt } = input.dirs();
-  let moved = false, used = main;
-  const s = (main === 'up' || main === 'down' ? CLIMB : RUN) * dt;
-  // a diagonal on the pad grabs a ladder as soon as the runner lines up with it
-  if (alt === 'up' && Math.abs(p.ox) < .2 && tile(p.x, p.y) === 'H' && tile(p.x, p.y - 1) !== '#' && tile(p.x, p.y - 1) !== '@') { moved = stepUp(p, CLIMB * dt); used = 'up'; }
-  else if (alt === 'down' && Math.abs(p.ox) < .2 && canClimbDown(p) && tile(p.x, p.y) !== '-') { moved = stepDown(p, CLIMB * dt); used = 'down'; }
-  if (!moved && main) { moved = doMove(p, main, s); used = main; }
-  if (!moved && alt) { moved = doMove(p, alt, (alt === 'up' || alt === 'down' ? CLIMB : RUN) * dt); used = alt; }
+  if (main !== p.want) { p.want = main; p.wantAge = 0; } else p.wantAge += dt;
+  let used = null;
+  for (const d of [main, alt]) if (d && (used = steer(p, d, dt))) break;
+  // turn buffering: a turn pressed a little early keeps the runner going the old way
+  // for a moment, so it is taken at the next opening instead of being dropped
+  if (!used && main && p.lastMove && p.wantAge < .35 && isVertical(main) !== isVertical(p.lastMove)) used = steer(p, p.lastMove, dt);
+  const moved = !!used;
+  if (moved) p.lastMove = used;
   p.pose = poseFor(p, moved, moved ? used : null);
   pickup();
   if (G.revealed && p.y === 0) levelComplete();
+}
+const isVertical = d => d === 'up' || d === 'down';
+function canGoUp(a) { return canClimbUp(a) && !(a.oy <= 0 && (a.y === 0 || !passable(tile(a.x, a.y - 1)))); }
+function canGoDown(a) { return canClimbDown(a) && !(a.oy >= 0 && tile(a.x, a.y) !== '-' && (a.y + 1 >= H || !passable(tile(a.x, a.y + 1)))); }
+/* Moves the runner toward direction d, with corner assistance. Returns the direction actually
+   moved in, or null when d is not possible from here. */
+function steer(p, d, dt) {
+  const run = RUN * dt, climb = CLIMB * dt;
+  if (!isVertical(d)) {
+    const dx = d === 'left' ? -1 : 1;
+    if (Math.abs(p.oy) > 1e-3 && !passable(tile(p.x + dx, p.y))) {
+      // between two rows on a ladder: finish the climb if the opening is on the row we are heading to
+      const v = p.oy < 0 ? 'up' : 'down', ny = p.y + Math.sign(p.oy);
+      if (passable(tile(p.x + dx, ny)) && (v === 'up' ? canGoUp(p) : canGoDown(p)))
+        return (v === 'up' ? stepUp(p, climb) : stepDown(p, climb)) ? v : null;
+      return null;
+    }
+    if (Math.abs(p.oy) < 1e-3 && (dx > 0 ? p.ox >= 0 : p.ox <= 0) && !passable(tile(p.x + dx, p.y))) return null;
+    return stepH(p, dx, run) ? d : null;
+  }
+  const ok = d === 'up' ? canGoUp(p) : canGoDown(p);
+  if (ok) return (d === 'up' ? stepUp(p, climb) : stepDown(p, climb)) ? d : null;
+  // a ladder in the next column we are already leaning into: walk the rest of the way
+  if (Math.abs(p.ox) > 1e-3 && Math.abs(p.oy) < 1e-3) {
+    const dx = Math.sign(p.ox), xb = p.x + dx;
+    if (!passable(tile(xb, p.y))) return null;
+    const ghost = { x: xb, y: p.y, ox: 0, oy: 0 };
+    if (d === 'up' ? canGoUp(ghost) : canGoDown(ghost)) return stepH(p, dx, run) ? (dx < 0 ? 'left' : 'right') : null;
+  }
+  return null;
 }
 function doMove(a, dir, s) {
   if (dir === 'left') return stepH(a, -1, s);
@@ -852,16 +883,29 @@ function poke() {
 }
 const dpad = document.getElementById('dpad');
 let padId = null;
+/* The pad reads the thumb's angle. The current direction holds until the thumb is 12° past the
+   diagonal, so a thumb resting near the boundary does not flicker between two directions; within
+   20° of a diagonal the neighbouring direction is offered as a fallback. */
+const PAD_DIRS = { right: 0, down: 90, left: 180, up: -90 };
+const angDiff = (a, b) => ((a - b + 540) % 360) - 180;
 function readPad(e) {
   const r = dpad.getBoundingClientRect();
   const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-  if (Math.hypot(dx, dy) < r.width * .1) { input.touch = null; input.touchAlt = null; }
+  if (Math.hypot(dx, dy) < r.width * .12) { input.touch = null; input.touchAlt = null; }
   else {
-    const h = dx < 0 ? 'left' : 'right', v = dy < 0 ? 'up' : 'down';
-    const ax = Math.abs(dx), ay = Math.abs(dy);
-    input.touch = ax > ay ? h : v;
-    const minor = Math.min(ax, ay) / Math.max(ax, ay);
-    input.touchAlt = minor > .45 ? (ax > ay ? v : h) : null;
+    const a = Math.atan2(dy, dx) * 180 / Math.PI;
+    let main = input.touch;
+    if (!main || Math.abs(angDiff(a, PAD_DIRS[main])) > 57) {
+      main = 'right';
+      for (const k in PAD_DIRS) if (Math.abs(angDiff(a, PAD_DIRS[k])) < Math.abs(angDiff(a, PAD_DIRS[main]))) main = k;
+    }
+    const off = angDiff(a, PAD_DIRS[main]);
+    let alt = null;
+    if (Math.abs(off) > 25) {
+      const target = PAD_DIRS[main] + Math.sign(off) * 90;
+      for (const k in PAD_DIRS) if (Math.abs(angDiff(target, PAD_DIRS[k])) < 1) alt = k;
+    }
+    input.touch = main; input.touchAlt = alt;
   }
   for (const el of dpad.children) el.classList.toggle('on', el.dataset.d === input.touch);
 }

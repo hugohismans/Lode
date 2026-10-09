@@ -1,5 +1,5 @@
 // Offline cache: the game is static, so serve from cache and refresh in the background.
-const CACHE = 'lode-v5';
+const CACHE = 'lode-v6';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'assets/modern.png'];
 
 self.addEventListener('install', e => {
