@@ -986,15 +986,18 @@ function respawnGuard(g) {
   Object.assign(g, mkActor(x, y, true), { gold: keepGold, goldTimer: 6, hidden: .8 });
   G.distDirty = true;
 }
-function blockedByGuard(a, dx, dy) {
+function guardAhead(a, dx, dy) {
   for (const o of G.guards) {
     if (o === a || o.hidden) continue;
     const rx = (o.x + o.ox) - (a.x + a.ox), ry = (o.y + o.oy) - (a.y + a.oy);
-    if (dx && rx * dx > 0 && rx * dx < 1 && Math.abs(ry) < .8) return true;
-    if (dy && ry * dy > 0 && ry * dy < 1 && Math.abs(rx) < .8) return true;
+    if (dx && rx * dx > 0 && rx * dx < 1 && Math.abs(ry) < .8) return o;
+    if (dy && ry * dy > 0 && ry * dy < 1 && Math.abs(rx) < .8) return o;
   }
-  return false;
+  return null;
 }
+const blockedByGuard = (a, dx, dy) => !!guardAhead(a, dx, dy);
+const DIR_V = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 
 /* edges of the movement graph, as seen by a guard standing aligned in (x,y) */
 function edgesOf(x, y) {
@@ -1032,7 +1035,7 @@ function decide(g) {
       G.gold.add(k); g.gold = false;
     }
   }
-  const opts = edgesOf(g.x, g.y).filter(([act]) => act !== 'fall');
+  const opts = edgesOf(g.x, g.y).filter(([act]) => act !== 'fall' && !(g.avoidT > 0 && act === g.avoid));
   let best = null, bestD = Infinity;
   for (const o of opts) {
     let d = G.dist[o[2] * W + o[1]];
@@ -1049,6 +1052,7 @@ function decide(g) {
 
 function updateGuard(g, dt) {
   if (g.hidden) { g.hidden = Math.max(0, g.hidden - dt); return; }
+  if (g.avoidT > 0) g.avoidT -= dt;
   const s = G.guardSpeed * dt;
   if (g.trapped) {
     g.trapT -= dt; g.pose = 'trapped';
@@ -1087,12 +1091,19 @@ function updateGuard(g, dt) {
   const dx = g.action === 'left' ? -1 : g.action === 'right' ? 1 : 0;
   const dy = g.action === 'up' ? -1 : g.action === 'down' ? 1 : 0;
   let moved = false;
-  if (blockedByGuard(g, dx, dy)) {
+  const o = guardAhead(g, dx, dy);
+  if (o) {
+    // Two guards face to face: the later one in the list gives way at once. A guard stuck
+    // behind another for half a second also turns back. Either way it avoids the blocked
+    // direction for a moment so the next decision picks another route.
     g.stuck += dt;
-    if (g.stuck > .8) {         // unjam two guards facing each other
-      const opts = edgesOf(g.x, g.y).filter(o => o[0] !== g.action && o[0] !== 'fall');
-      if (opts.length && aligned) g.action = opts[(Math.random() * opts.length) | 0][0];
-      g.stuck = 0;
+    const headOn = o.action === OPPOSITE[g.action] && guardAhead(o, ...DIR_V[o.action]) === g;
+    if ((headOn && G.guards.indexOf(g) > G.guards.indexOf(o)) || g.stuck > .5) {
+      g.avoid = g.action; g.avoidT = 1.2; g.stuck = 0;
+      const back = OPPOSITE[g.action], [bx, by] = DIR_V[back];
+      const canBack = !guardAhead(g, bx, by) && (bx ? passable(tile(g.x + bx, g.y)) || (bx > 0 ? g.ox < 0 : g.ox > 0)
+        : by < 0 ? canClimbUp(g) : canClimbDown(g));
+      g.action = canBack ? back : null;
     }
   } else {
     g.stuck = 0;
