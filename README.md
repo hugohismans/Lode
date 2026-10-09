@@ -21,6 +21,13 @@ Le jeu tient dans un seul fichier, `index.html`, sans dépendance ni build.
 
 En portrait, la loupe dans la barre du haut bascule entre vue zoomée (la caméra suit le joueur) et vue entière.
 
+## Deux styles graphiques
+
+Le style se choisit sur l'écran titre ou dans le menu pause, et le choix est mémorisé.
+
+- **1983** : l'esprit de la version Apple II d'origine. La mine est dessinée dans une image de 220 × 140 pixels (10 pixels par case), avec une palette de six couleurs (fond noir, briques orange, blocs bleus, échelles et cordes blanches), puis agrandie sans lissage, avec des lignes de balayage façon écran cathodique. Polices pixel, boutons carrés.
+- **Moderne** : sprites cartoon de [Kenney.nl](https://kenney.nl) (licence CC0, libres de droits) : un aventurier pour le joueur, des zombies pour les gardes, des briques, de la pierre, des échelles en bois et des pièces d'or qui tournent. Il y a aussi un ciel en parallaxe, des éclats de brique quand on creuse et des étincelles quand on ramasse l'or.
+
 ## Règles
 
 - Les briques rouges se creusent, le béton gris non. Certaines briques sont fausses et on passe à travers.
@@ -43,4 +50,9 @@ La rangée du haut ne doit être atteignable que par une échelle `S` : c'est la
 ## Fichiers
 
 - `index.html` : le jeu (moteur, rendu canvas, commandes tactiles, niveaux)
+- `assets/modern.png` : atlas des sprites du style Moderne, assemblé à partir des packs Kenney « Platformer Characters » et « New Platformer Pack » (voir `assets/LICENSE.txt`)
 - `manifest.webmanifest`, `sw.js`, `icon*.png`, `icon.svg` : installation sur l'écran d'accueil et mode hors ligne
+
+## Crédits
+
+Graphismes du style Moderne : Kenney Vleugels, [kenney.nl](https://kenney.nl), licence Creative Commons Zero (CC0).

@@ -14,50 +14,68 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Fredoka:wght@500;600;700&family=Nunito:wght@600;800&display=swap">
 <style>
-/* Layout: score bar on top, the mine shaft (canvas) in the middle,
-   thumb controls docked below in portrait or on both flanks in landscape. */
+/* Layout: score bar on top, the playfield in the middle, thumb controls docked below (portrait)
+   or on both flanks (landscape). Two skins share it:
+   1983    — Apple II black with orange bricks and blue stone, pixel fonts, square edges.
+   Moderne — Kenney cartoon sprites, sky blues, chunky rounded buttons. */
 :root{
-  --night:#0d0f1f;     /* page ground */
-  --shaft:#141831;     /* playfield + panels */
-  --ink:#e9ecff;       /* text */
-  --dim:#8d93bd;       /* secondary text */
-  --gold:#ffc83d;      /* gold, primary accent */
-  --brick:#c4532f;     /* bricks, dig buttons */
-  --hero:#7fe7ff;      /* runner */
-  --guard:#ff4d6d;     /* guards, danger */
-  --btn:#1d2242;
-  --btn-hi:#2c3466;
-  --line:#2a3058;
-  --display:"Silkscreen","Courier New",monospace;
-  --body:"Chakra Petch",system-ui,sans-serif;
-  --pad:180px;
-  --dig:84px;
+  --page:#2f6fd0; --page-2:#5b9cf2;
+  --panel:#ffffff; --hud:#ffffff; --ink:#1d2742; --dim:#5b6888; --line:#c8d5f0;
+  --gold:#f7b500; --gold-ink:#3b2600; --gold-shadow:#b87400;
+  --brick:#e1603a; --brick-hi:#f59166; --brick-lo:#9c3518; --dig-ink:#ffffff;
+  --accent:#2f6fd0; --guard:#5aa13a;
+  --btn:#eef3ff; --btn-hi:#dbe6ff; --btn-ink:#1d2742; --btn-shadow:#c8d5f0;
+  --pad-face:rgba(255,255,255,.94); --pad-hub:#dbe6ff; --arrow:#2f6fd0; --arrow-on:#f7b500;
+  --frame:#1e4fa8; --overlay:rgba(16,36,86,.5); --raise:rgba(10,30,80,.22);
+  --radius:16px; --radius-sm:12px;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,sans-serif;
+  --body-size:15px; --label-size:10px; --hud-size:15px; --btn-size:17px; --logo-size:76px;
+  --pad:180px; --dig:84px;
+  color-scheme:light;
+}
+:root[data-skin="retro"]{
+  --page:#000000; --page-2:#000000;
+  --panel:#000000; --hud:#000000; --ink:#f2f2f2; --dim:#9c9c9c; --line:#f2f2f2;
+  --gold:#ffd400; --gold-ink:#000000; --gold-shadow:#f2f2f2;
+  --brick:#ff7a1a; --brick-hi:#ff7a1a; --brick-lo:#ff7a1a; --dig-ink:#000000;
+  --accent:#1f7dff; --guard:#d04dff;
+  --btn:#000000; --btn-hi:#1f7dff; --btn-ink:#f2f2f2; --btn-shadow:#1f7dff;
+  --pad-face:transparent; --pad-hub:#000000; --arrow:#f2f2f2; --arrow-on:#ffd400;
+  --frame:#1f7dff; --overlay:rgba(0,0,0,.72); --raise:transparent;
+  --radius:0px; --radius-sm:0px;
+  --display:"Press Start 2P","Courier New",monospace;
+  --body:"VT323","Courier New",monospace;
+  --body-size:21px; --label-size:8px; --hud-size:11px; --btn-size:11px; --logo-size:44px;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
-html{background:var(--night)}
-body{background:var(--night);color:var(--ink);font:15px/1.4 var(--body);overflow:hidden;overscroll-behavior:none;
+html{background:var(--page)}
+body{background:var(--page);background-image:linear-gradient(var(--page-2),var(--page));color:var(--ink);
+  font:var(--body-size)/1.35 var(--body);overflow:hidden;overscroll-behavior:none;
   touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;touch-action:manipulation}
-button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
 #app{position:relative;height:100%;display:flex;flex-direction:column;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 
 /* HUD */
-#hud{display:flex;align-items:center;gap:14px;padding:8px 16px;font-family:var(--display);font-size:13px;letter-spacing:.06em;
-  border-bottom:1px solid var(--line);background:var(--shaft);flex:none}
+#hud{display:flex;align-items:center;gap:14px;padding:8px 16px;font-family:var(--display);font-size:var(--hud-size);font-weight:600;
+  letter-spacing:.04em;background:var(--hud);border-bottom:1px solid var(--line);box-shadow:0 3px 0 var(--raise);flex:none;z-index:1}
+:root[data-skin="retro"] #hud{border-bottom:2px solid var(--frame)}
 #hud .stat{display:flex;align-items:baseline;gap:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
-#hud .lab{color:var(--dim);font-size:10px}
-#hud .gold{color:var(--gold)}
-#hud .lives{color:var(--hero)}
-#hud .spacer{flex:1}
-.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--btn);border-radius:8px;cursor:pointer;padding:0}
-.icon-btn svg{width:18px;height:18px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#hud .lab{color:var(--dim);font-size:var(--label-size);letter-spacing:.08em}
+#hud .gold span:last-child{color:var(--gold-shadow)}
+:root[data-skin="retro"] #hud .gold span:last-child{color:var(--gold)}
+#hud .stats{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:3px}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--btn);
+  border-radius:var(--radius-sm);cursor:pointer;padding:0}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:var(--btn-ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn:active{background:var(--btn-hi)}
 #btn-zoom{display:none}
 body.portrait #btn-zoom{display:grid}
@@ -65,71 +83,100 @@ body.portrait #btn-zoom{display:grid}
 /* Stage */
 #stage{flex:none;display:flex;justify-content:center;align-items:center;padding:8px 0;position:relative}
 body.land #stage{flex:1}
-#game{display:block;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px;background:var(--shaft)}
+#game{display:block;border:3px solid var(--frame);border-radius:calc(var(--radius) / 2);background:#000;box-shadow:0 6px 0 var(--raise)}
 
 /* Controls */
 #controls{flex:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 22px 18px}
 body.land #controls{position:absolute;left:0;right:0;bottom:0;top:52px;flex:none;pointer-events:none;
   padding:0 max(14px,env(safe-area-inset-right,0px)) 14px max(14px,env(safe-area-inset-left,0px));align-items:flex-end}
 body.land #controls > *{pointer-events:auto}
-#dpad{width:var(--pad);height:var(--pad);position:relative;border-radius:50%;
-  background:radial-gradient(circle at 50% 50%, var(--btn-hi) 0 16%, var(--btn) 17% 100%);border:1px solid var(--line);flex:none}
-#dpad .arm{position:absolute;width:34%;height:34%;display:grid;place-items:center;border-radius:12px;transition:background .06s}
-#dpad .arm svg{width:46%;height:46%;fill:var(--dim)}
+#dpad{width:var(--pad);height:var(--pad);position:relative;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 50% 50%, var(--pad-hub) 0 16%, var(--pad-face) 17% 100%);border:1px solid var(--line);box-shadow:0 6px 0 var(--raise)}
+#dpad .arm{position:absolute;width:34%;height:34%;display:grid;place-items:center;border-radius:var(--radius-sm);transition:background .06s}
+#dpad .arm svg{width:46%;height:46%;fill:var(--arrow)}
 #dpad .up{left:33%;top:3%} #dpad .down{left:33%;bottom:3%} #dpad .left{top:33%;left:3%} #dpad .right{top:33%;right:3%}
 #dpad .arm.on{background:var(--btn-hi)}
-#dpad .arm.on svg{fill:var(--hero)}
+#dpad .arm.on svg{fill:var(--arrow-on)}
+:root[data-skin="retro"] #dpad{background:none;border:none;box-shadow:none;border-radius:0}
+:root[data-skin="retro"] #dpad::after{content:"";position:absolute;left:34%;top:34%;width:32%;height:32%;background:#000;border:3px solid var(--line)}
+:root[data-skin="retro"] #dpad .arm{background:#000;border:3px solid var(--line)}
+:root[data-skin="retro"] #dpad .up{top:0} :root[data-skin="retro"] #dpad .down{bottom:0}
+:root[data-skin="retro"] #dpad .left{left:0} :root[data-skin="retro"] #dpad .right{right:0}
+:root[data-skin="retro"] #dpad .arm.on{background:var(--btn-hi)}
 #actions{display:flex;gap:14px;align-items:flex-end;flex:none}
-.dig{width:var(--dig);height:var(--dig);border-radius:50%;border:1px solid #7a2a17;cursor:pointer;
-  background:radial-gradient(circle at 35% 30%, #e0754c, var(--brick) 55%, #8a3119);display:grid;place-items:center;padding:0;
-  box-shadow:0 4px 0 #5c1f10;font-family:var(--display);font-size:11px;color:#fff3ea}
-.dig svg{width:44%;height:44%;fill:#fff3ea}
-.dig.on{transform:translateY(3px);box-shadow:0 1px 0 #5c1f10}
-.dig span{display:block;margin-top:-6px}
+.dig{width:var(--dig);height:var(--dig);border-radius:50%;border:none;cursor:pointer;padding:0;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%, var(--brick-hi), var(--brick) 55%, var(--brick-lo));box-shadow:0 5px 0 var(--brick-lo);
+  font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:.06em;color:var(--dig-ink)}
+.dig svg{width:44%;height:44%;fill:var(--dig-ink)}
+.dig span{display:block;margin-top:-4px}
+.dig.on{transform:translateY(4px);box-shadow:0 1px 0 var(--brick-lo)}
+:root[data-skin="retro"] .dig{border-radius:0;background:var(--brick);box-shadow:5px 5px 0 var(--line);font-size:8px}
+:root[data-skin="retro"] .dig.on{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--line)}
 #actions .dig:first-child{margin-bottom:26px}
 
 /* Overlay screens */
 #overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
-  background:rgba(9,10,22,.78);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:5}
-.panel{width:min(420px,100%);max-height:100%;overflow:auto;touch-action:pan-y;background:var(--shaft);border:1px solid var(--line);
-  border-radius:14px;padding:24px 20px;display:flex;flex-direction:column;gap:12px;text-align:center}
-.logo{font-family:var(--display);font-weight:700;font-size:64px;line-height:1;margin:4px 0 0;letter-spacing:.08em;color:var(--gold);
-  text-shadow:0 4px 0 #8a5a00, 0 0 28px rgba(255,200,61,.35)}
-.panel h2{font-family:var(--display);font-size:22px;margin:0;letter-spacing:.06em;text-wrap:balance}
-.tag{margin:0 0 6px;color:var(--dim)}
-.btn{border:1px solid var(--line);background:var(--btn);border-radius:10px;padding:12px 16px;font-family:var(--display);font-size:15px;letter-spacing:.05em;cursor:pointer}
-.btn:active{background:var(--btn-hi)}
-.btn.primary{background:var(--gold);color:#2a1d00;border-color:#c99500;box-shadow:0 4px 0 #8a5a00}
-.btn.primary:active{transform:translateY(3px);box-shadow:0 1px 0 #8a5a00}
-.small{font-size:12px;color:var(--dim);margin:0}
-.big-num{font-family:var(--display);font-size:34px;color:var(--gold);margin:0;font-variant-numeric:tabular-nums}
+  background:var(--overlay);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:5}
+.panel{width:min(420px,100%);max-height:100%;overflow:auto;touch-action:pan-y;background:var(--panel);border:1px solid var(--line);
+  border-radius:calc(var(--radius) + 6px);box-shadow:0 10px 0 var(--raise);padding:24px 20px;display:flex;flex-direction:column;gap:12px;text-align:center}
+:root[data-skin="retro"] .panel{border:6px double var(--line)}
+.logo{font-family:var(--display);font-weight:700;font-size:var(--logo-size);line-height:1;margin:6px 0 0;letter-spacing:.06em;color:var(--gold);
+  text-shadow:0 6px 0 var(--gold-shadow)}
+:root[data-skin="retro"] .logo{color:var(--brick);text-shadow:5px 5px 0 var(--frame);letter-spacing:.12em;margin:14px 0 8px}
+.panel h2{font-family:var(--display);font-weight:700;font-size:calc(var(--btn-size) + 7px);margin:0;letter-spacing:.04em;text-wrap:balance;line-height:1.3}
+.tag{margin:0 0 4px;color:var(--dim)}
+.btn{border:1px solid var(--line);background:var(--btn);color:var(--btn-ink);border-radius:var(--radius-sm);padding:12px 16px;
+  font-family:var(--display);font-weight:600;font-size:var(--btn-size);letter-spacing:.04em;cursor:pointer;box-shadow:0 4px 0 var(--btn-shadow)}
+.btn:active{background:var(--btn-hi);transform:translateY(3px);box-shadow:0 1px 0 var(--btn-shadow)}
+.btn.primary{background:var(--gold);color:var(--gold-ink);border-color:var(--gold-shadow);box-shadow:0 5px 0 var(--gold-shadow)}
+.btn.primary:active{transform:translateY(4px);box-shadow:0 1px 0 var(--gold-shadow)}
+:root[data-skin="retro"] .btn{border:2px solid var(--line);box-shadow:4px 4px 0 var(--btn-shadow);line-height:1.6}
+:root[data-skin="retro"] .btn.primary{border-color:var(--gold);box-shadow:4px 4px 0 var(--line)}
+:root[data-skin="retro"] .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--btn-shadow)}
+.small{font-size:.85em;color:var(--dim);margin:0}
+.big-num{font-family:var(--display);font-weight:700;font-size:calc(var(--btn-size) * 2);color:var(--gold-shadow);margin:0;font-variant-numeric:tabular-nums}
+:root[data-skin="retro"] .big-num{color:var(--gold)}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{border:2px solid var(--line);background:var(--btn);border-radius:var(--radius-sm);padding:8px 6px 10px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--display);font-weight:600;font-size:calc(var(--btn-size) - 2px);color:var(--btn-ink)}
+.seg button canvas{width:72px;height:36px;border-radius:calc(var(--radius-sm) / 2)}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--btn-hi)}
+:root[data-skin="retro"] .seg button[aria-pressed="true"]{border-color:var(--gold);background:#000;color:var(--gold)}
+.seg-label{font-size:.8em;color:var(--dim);margin:2px 0 -4px;text-align:left}
+
 #level-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
-.lvl{border:1px solid var(--line);background:var(--btn);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
-.lvl b{font-family:var(--display);font-size:18px;color:var(--gold)}
-.lvl span{font-size:12px;color:var(--dim)}
+.lvl{border:1px solid var(--line);background:var(--btn);color:var(--btn-ink);border-radius:var(--radius-sm);padding:10px 8px;cursor:pointer;text-align:left;
+  display:flex;flex-direction:column;gap:2px;box-shadow:0 3px 0 var(--btn-shadow)}
+.lvl b{font-family:var(--display);font-size:calc(var(--btn-size) + 2px);color:var(--accent)}
+:root[data-skin="retro"] .lvl{border:2px solid var(--line);box-shadow:none}
+:root[data-skin="retro"] .lvl b{color:var(--gold)}
+.lvl span{font-size:.85em;color:var(--dim)}
 .lvl:disabled{opacity:.35;cursor:default}
 .help{text-align:left;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
-.help li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
-.help canvas{width:28px;height:28px;image-rendering:pixelated}
+.help li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.help canvas{width:30px;height:30px}
+:root[data-skin="retro"] .help canvas,:root[data-skin="retro"] .seg canvas{image-rendering:pixelated}
 .row{display:flex;gap:10px}
 .row > *{flex:1}
 @media (max-width:480px){
-  #hud{gap:9px;padding:8px 10px;font-size:12px}
-  #hud .lab{font-size:9px}
+  #hud{gap:8px;padding:8px 10px;font-size:calc(var(--hud-size) - 2px)}
+  #hud .stats{column-gap:10px}
   .icon-btn{width:30px;height:30px}
   #controls{padding:8px 14px 18px}
 }
-@media (prefers-reduced-motion: reduce){ .logo{text-shadow:0 4px 0 #8a5a00} }
+@media (prefers-reduced-motion: reduce){ .btn:active,.dig.on{transform:none} }
 </style>
 </head>
 <body>
 <div id="app">
   <header id="hud">
-    <div class="stat"><span class="lab">NIV</span><span id="h-level">1</span></div>
-    <div class="stat"><span class="lab">SCORE</span><span id="h-score">000000</span></div>
-    <div class="stat gold"><span class="lab">OR</span><span id="h-gold">0</span></div>
-    <div class="stat lives"><span class="lab">VIES</span><span id="h-lives">5</span></div>
-    <div class="spacer"></div>
+    <div class="stats">
+      <div class="stat"><span class="lab">NIV</span><span id="h-level">1</span></div>
+      <div class="stat"><span class="lab">SCORE</span><span id="h-score">000000</span></div>
+      <div class="stat gold"><span class="lab">OR</span><span id="h-gold">0</span></div>
+      <div class="stat lives"><span class="lab">VIES</span><span id="h-lives">5</span></div>
+    </div>
     <button class="icon-btn" id="btn-zoom" aria-label="Zoom"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5 20 20M7.5 10h5M10 7.5v5"/></svg></button>
     <button class="icon-btn" id="btn-sound" aria-label="Son"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="snd-wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
     <button class="icon-btn" id="btn-pause" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
@@ -152,6 +199,11 @@ body.land #controls > *{pointer-events:auto}
     <section class="panel" id="scr-title">
       <h1 class="logo">LODE</h1>
       <p class="tag">Ramassez tout l'or, piégez les gardes dans des trous, puis filez par l'échelle qui apparaît en haut.</p>
+      <p class="seg-label">Style graphique</p>
+      <div class="seg" role="group" aria-label="Style graphique">
+        <button data-skin="retro" aria-pressed="false"><canvas width="144" height="72" data-preview="retro"></canvas>1983</button>
+        <button data-skin="modern" aria-pressed="false"><canvas width="144" height="72" data-preview="modern"></canvas>Moderne</button>
+      </div>
       <button class="btn primary" id="btn-play">Jouer</button>
       <div class="row">
         <button class="btn" id="btn-levels">Niveaux</button>
@@ -171,15 +223,21 @@ body.land #controls > *{pointer-events:auto}
         <li><canvas data-icon="brick" width="10" height="10"></canvas><div>Les boutons <b>CREUSE</b> percent la brique en bas à gauche ou à droite. Le trou se rebouche après quelques secondes.</div></li>
         <li><canvas data-icon="guard" width="10" height="10"></canvas><div>Un garde qui tombe dans un trou reste coincé un moment. Vous pouvez marcher sur sa tête. S'il est encore dedans quand le trou se referme, il est écrasé.</div></li>
         <li><canvas data-icon="ladder" width="10" height="10"></canvas><div>Une fois l'or ramassé, des échelles cachées apparaissent. Montez tout en haut de l'écran pour finir le niveau.</div></li>
-        <li><canvas data-icon="rope" width="10" height="10"></canvas><div>Suspendez-vous aux cordes. Bas pour lâcher prise. Le béton gris ne se creuse pas, et certaines briques sont fausses.</div></li>
+        <li><canvas data-icon="rope" width="10" height="10"></canvas><div>Suspendez-vous aux cordes. Bas pour lâcher prise. Les blocs pleins ne se creusent pas, et certaines briques sont fausses.</div></li>
       </ul>
       <p class="small">Clavier : flèches ou ZQSD/WASD, J et K pour creuser, Échap pour la pause.</p>
+      <p class="small">Graphismes du style Moderne : packs « Platformer Characters » et « New Platformer Pack » de Kenney.nl, licence CC0.</p>
       <button class="btn" data-go="title">Retour</button>
     </section>
     <section class="panel" id="scr-pause" hidden>
       <h2>Pause</h2>
       <button class="btn primary" id="btn-resume">Reprendre</button>
       <button class="btn" id="btn-restart">Recommencer le niveau (−1 vie)</button>
+      <p class="seg-label">Style graphique</p>
+      <div class="seg" role="group" aria-label="Style graphique">
+        <button data-skin="retro" aria-pressed="false">1983</button>
+        <button data-skin="modern" aria-pressed="false">Moderne</button>
+      </div>
       <button class="btn" id="btn-menu">Menu</button>
     </section>
     <section class="panel" id="scr-clear" hidden>
@@ -554,13 +612,13 @@ function tryDig(p, d) {
   for (const g of G.guards) if (!g.hidden && Math.abs(g.x + g.ox - tx) < .9 && Math.abs(g.y + g.oy - p.y) < .95) return false;
   p.ox = 0; p.oy = 0; p.face = d; p.digT = DIG_TIME; p.pose = 'dig';
   G.holes.set(ty * W + tx, { x: tx, y: ty, t: 0, phase: 'dig' });
-  Sound.dig(); buzz(12);
+  Sound.dig(); buzz(12); fx('dig', tx, ty);
   return true;
 }
 function pickup() {
   const p = G.player, k = p.y * W + p.x;
   if (G.gold.has(k) && Math.abs(p.oy) < .45) {
-    G.gold.delete(k); G.score += 250; Sound.gold(); buzz(8);
+    G.gold.delete(k); G.score += 250; Sound.gold(); buzz(8); fx('gold', p.x, p.y);
     checkReveal(); updateHud();
   }
 }
@@ -579,7 +637,7 @@ function updateHoles(dt) {
       G.holes.delete(k); G.distDirty = true;
       const p = G.player;
       if (p.x === h.x && p.y === h.y) { killPlayer(); return; }
-      for (const g of G.guards) if (!g.hidden && g.x === h.x && g.y === h.y) { G.score += 75; Sound.kill(); respawnGuard(g); updateHud(); }
+      for (const g of G.guards) if (!g.hidden && g.x === h.x && g.y === h.y) { G.score += 75; Sound.kill(); fx('kill', g.x, g.y); respawnGuard(g); updateHud(); }
     }
   }
 }
@@ -825,173 +883,338 @@ document.addEventListener('dblclick', e => e.preventDefault());
 /* ---------- rendering ---------- */
 const cvs = document.getElementById('game'), ctx = cvs.getContext('2d');
 let TS = 24, DPR = 1, VIEW_W = W * 24;
-const COL = {
-  bg: '#141831', bgDot: '#1c2142', brick: '#c4532f', brickHi: '#e07a4f', mortar: '#5e2012',
-  stone: '#4b5182', stoneHi: '#7a81b8', stoneLo: '#2a2e52', ladder: '#d9c9a0', ladderLit: '#ffe28a',
-  rope: '#c9a46a', ropeLo: '#8a6c3e', gold: '#ffc83d', goldHi: '#fff1b0', goldLo: '#b07a00', hole: '#07080f',
-  hero: '#7fe7ff', heroEye: '#0d0f1f', guard: '#ff4d6d', guardEye: '#2a0b12'
-};
+let SKIN = store.get('skin', 'retro') === 'modern' ? 'modern' : 'retro';
 
-const SPR = {
-  stand: ["...aaa....","...aab....","...aaa....","..aaaaa...",".a.aaa.a..",".a.aaa.a..","...aaa....","...a.a....","...a.a....","..aa.aa..."],
-  run0:  ["...aaa....","...aab....","...aaa....","..aaaaa...",".a.aaa.a..","...aaa..a.","...a.a....","..a...a...",".a.....a..",".a.....aa."],
-  run1:  ["...aaa....","...aab....","...aaa....","...aaaa...","...aaa.a..","..aaaa....","...aa.....","...a.a....","...a..a...","..aa..a..."],
-  climb0:[".a......a.",".a..aa..a.",".aa.aa.aa.","..aaaaaa..","....aa....","....aa....","...a..a...","...a..a...","..aa..a...","......aa.."],
-  climb1:[".a......a.",".a..aa..a.",".aa.aa.aa.","..aaaaaa..","....aa....","....aa....","...a..a...","...a..a...","...a..aa..","..aa......"],
-  rope0: ["..a...a...","..a.aaa...","...aaab...","...aaaa...","....aa....","....aa....","...a..a...","...a..a...","..a...a...","..a....a.."],
-  rope1: ["...a...a..","...aaa.a..","...aaab...","...aaaa...","....aa....","....aa....","....aa....","...a.a....","...a..a...","..a...a..."],
-  fall:  [".a......a.","..a.aa.a..","...aaba...","...aaaa...","....aa....","....aa....","...a..a...","..a....a..","..a....a..",".........."],
-  dig:   ["...aaa....","...aab....","...aaa....","...aaaa...","...aaa.a..","...aaa..a.","...aa....a","...a.a....","..a...a...","..a...a..."]
-};
-const sprCache = {};
-function sprite(name, color, eye) {
-  const key = name + color;
-  if (sprCache[key]) return sprCache[key];
-  const c = document.createElement('canvas'); c.width = 10; c.height = 10;
-  const g = c.getContext('2d');
-  SPR[name].forEach((row, y) => [...row].forEach((ch, x) => {
-    if (ch === '.') return;
-    g.fillStyle = ch === 'a' ? color : eye; g.fillRect(x, y, 1, 1);
-  }));
-  return (sprCache[key] = c);
-}
-
-let tileCache = {};
-function makeTile(kind) {
-  const s = TS * DPR, c = document.createElement('canvas'); c.width = c.height = s;
-  const g = c.getContext('2d'), u = Math.max(1, Math.round(s / 16));
-  if (kind === '#') {
-    g.fillStyle = COL.mortar; g.fillRect(0, 0, s, s);
-    const hh = s / 2;
-    for (let r = 0; r < 2; r++) {
-      const off = r ? -s / 4 : 0;
-      for (let bx = off; bx < s; bx += s / 2) {
-        const x0 = Math.max(0, bx) | 0, x1 = Math.min(s, bx + s / 2 - u) | 0, y0 = (r * hh) | 0, y1 = (r * hh + hh - u) | 0;
-        if (x1 <= x0) continue;
-        g.fillStyle = COL.brick; g.fillRect(x0, y0, x1 - x0, y1 - y0);
-        g.fillStyle = COL.brickHi; g.fillRect(x0, y0, x1 - x0, u);
-      }
-    }
-  } else if (kind === '@') {
-    g.fillStyle = COL.stoneLo; g.fillRect(0, 0, s, s);
-    g.fillStyle = COL.stone; g.fillRect(u, u, s - 2 * u, s - 2 * u);
-    g.fillStyle = COL.stoneHi; g.fillRect(u, u, s - 2 * u, u); g.fillRect(u, u, u, s - 2 * u);
-    g.fillStyle = COL.stoneLo; g.fillRect(s * .3, s * .55, u, u); g.fillRect(s * .65, s * .3, u, u);
-  } else if (kind === 'H' || kind === 'S') {
-    const col = kind === 'S' ? COL.ladderLit : COL.ladder, w = Math.max(2, Math.round(s / 9));
-    g.fillStyle = col;
-    g.fillRect(Math.round(s * .16), 0, w, s); g.fillRect(Math.round(s * .84) - w, 0, w, s);
-    for (const f of [.12, .45, .78]) g.fillRect(Math.round(s * .16), Math.round(s * f), Math.round(s * .68), w);
-  } else if (kind === '-') {
-    const w = Math.max(2, Math.round(s / 12)), y = Math.round(s * .1);
-    g.fillStyle = COL.rope; g.fillRect(0, y, s, w);
-    g.fillStyle = COL.ropeLo; for (let x = 0; x < s; x += 3 * u) g.fillRect(x, y + w - u, u, u);
-  } else if (kind === '$') {
-    const ingot = (cx, by, wd, ht) => {
-      g.fillStyle = COL.goldLo;
-      g.beginPath(); g.moveTo(cx - wd / 2, by); g.lineTo(cx + wd / 2, by); g.lineTo(cx + wd * .35, by - ht); g.lineTo(cx - wd * .35, by - ht); g.closePath(); g.fill();
-      g.fillStyle = COL.gold;
-      g.beginPath(); g.moveTo(cx - wd * .42, by - u); g.lineTo(cx + wd * .3, by - u); g.lineTo(cx + wd * .22, by - ht + u); g.lineTo(cx - wd * .3, by - ht + u); g.closePath(); g.fill();
-      g.fillStyle = COL.goldHi; g.fillRect(cx - wd * .25, by - ht + u, wd * .3, u);
-    };
-    ingot(s * .34, s * .95, s * .42, s * .2); ingot(s * .68, s * .95, s * .42, s * .2); ingot(s * .5, s * .76, s * .42, s * .2);
-  }
+function canvasOf(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+function flipped(src) {
+  const c = canvasOf(src.width, src.height), g = c.getContext('2d');
+  g.translate(src.width, 0); g.scale(-1, 1); g.drawImage(src, 0, 0);
   return c;
 }
-function buildTiles() { tileCache = {}; for (const k of ['#', '@', 'H', 'S', '-', '$']) tileCache[k] = makeTile(k); }
-
-function viewCols() { return VIEW_W / TS; }
-function clampCam(x) { return Math.max(0, Math.min(W - viewCols(), x)); }
-
-function draw(now) {
-  const s = TS;
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, VIEW_W, H * s);
-  if (!G.player) return;
+function updateCamera() {
   const p = G.player;
   if (viewCols() < W) {
     const target = clampCam(p.x + p.ox + .5 - viewCols() / 2);
     G.camX += (target - G.camX) * .15;
     if (Math.abs(target - G.camX) < .01) G.camX = target;
   } else G.camX = 0;
-  ctx.translate(-Math.round(G.camX * s), 0);
+}
 
-  // faint grid dots, like lamp light on rock
-  ctx.fillStyle = COL.bgDot;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) ctx.fillRect(x * s + s / 2 - 1, y * s + s / 2 - 1, 2, 2);
+/* ===== 1983 skin =====
+   The whole mine is drawn into a 220x140 buffer (10 px per cell, like the Apple II's chunky
+   hi-res cells) with a 6-colour palette, then scaled up with nearest-neighbour and scanlines. */
+const VP = 10;
+const PAL = { o: '#ff7a1a', b: '#1f7dff', w: '#f2f2f2', y: '#ffd400', v: '#d04dff', k: '#000000' };
+const RETRO = {
+  brick: ["oooo.ooooo", "oooo.ooooo", "oooo.ooooo", "oooo.ooooo", "..........", "ooooooooo.", "ooooooooo.", "ooooooooo.", "ooooooooo.", ".........."],
+  stone: ["bbbbbbbbb.", "b.bbbbbbb.", "bbbbbbbbb.", "bbbbbbbbb.", "bbbbbbbbb.", "bbbbbbbbb.", "bbbbbbbbb.", "bbbbbbb.b.", "bbbbbbbbb.", ".........."],
+  ladder: [".w......w.", ".w......w.", ".wwwwwwww.", ".w......w.", ".w......w.", ".w......w.", ".w......w.", ".wwwwwwww.", ".w......w.", ".w......w."],
+  rope: ["..........", "wwwwwwwwww", "..........", "..........", "..........", "..........", "..........", "..........", "..........", ".........."],
+  gold: ["..........", "..........", "..........", "..........", "..yyyyyy..", ".y.yyyy.y.", ".yyyyyyyy.", ".yyy..yyy.", ".yyyyyyyy.", ".........."]
+};
+const SPR = {
+  stand: ["...aaa....", "...aab....", "...aaa....", "..aaaaa...", ".a.aaa.a..", ".a.aaa.a..", "...aaa....", "...a.a....", "...a.a....", "..aa.aa..."],
+  run0: ["...aaa....", "...aab....", "...aaa....", "..aaaaa...", ".a.aaa.a..", "...aaa..a.", "...a.a....", "..a...a...", ".a.....a..", ".a.....aa."],
+  run1: ["...aaa....", "...aab....", "...aaa....", "...aaaa...", "...aaa.a..", "..aaaa....", "...aa.....", "...a.a....", "...a..a...", "..aa..a..."],
+  climb0: [".a......a.", ".a..aa..a.", ".aa.aa.aa.", "..aaaaaa..", "....aa....", "....aa....", "...a..a...", "...a..a...", "..aa..a...", "......aa.."],
+  climb1: [".a......a.", ".a..aa..a.", ".aa.aa.aa.", "..aaaaaa..", "....aa....", "....aa....", "...a..a...", "...a..a...", "...a..aa..", "..aa......"],
+  rope0: ["..a...a...", "..a.aaa...", "...aaab...", "...aaaa...", "....aa....", "....aa....", "...a..a...", "...a..a...", "..a...a...", "..a....a.."],
+  rope1: ["...a...a..", "...aaa.a..", "...aaab...", "...aaaa...", "....aa....", "....aa....", "....aa....", "...a.a....", "...a..a...", "..a...a..."],
+  fall: [".a......a.", "..a.aa.a..", "...aaba...", "...aaaa...", "....aa....", "....aa....", "...a..a...", "..a....a..", "..a....a..", ".........."],
+  dig: ["...aaa....", "...aab....", "...aaa....", "...aaaa...", "...aaa.a..", "...aaa..a.", "...aa....a", "...a.a....", "..a...a...", "..a...a..."]
+};
+function bitmap(rows, map) {
+  const c = canvasOf(rows[0].length, rows.length), g = c.getContext('2d');
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { const col = map[ch]; if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); } }));
+  return c;
+}
+const RB = {};
+for (const k in RETRO) RB[k] = bitmap(RETRO[k], PAL);
+const figCache = {};
+function figure(name, color, flip) {
+  const key = name + color + (flip ? 'L' : 'R');
+  if (!figCache[key]) { const b = bitmap(SPR[name], { a: color, b: PAL.k }); figCache[key] = flip ? flipped(b) : b; }
+  return figCache[key];
+}
+function retroFrame(a) {
+  const k = a.isGuard ? 3 : 4;
+  switch (a.pose) {
+    case 'run': return ((a.x + a.ox) * k | 0) % 2 ? 'run0' : 'run1';
+    case 'climb': return ((a.y + a.oy) * k | 0) % 2 ? 'climb0' : 'climb1';
+    case 'rope': return ((a.x + a.ox) * k | 0) % 2 ? 'rope0' : 'rope1';
+    case 'fall': return 'fall';
+    case 'dig': return 'dig';
+    default: return 'stand';
+  }
+}
+const lo = canvasOf(W * VP, H * VP), lctx = lo.getContext('2d');
+let scanlines = null;
+function buildRetro() {
+  scanlines = null;
+  const vph = cvs.height / lo.height;
+  if (vph < 3) return;
+  scanlines = canvasOf(cvs.width, cvs.height);
+  const g = scanlines.getContext('2d'), h = Math.max(1, Math.round(vph * .28));
+  g.fillStyle = 'rgba(0,0,0,.32)';
+  for (let i = 1; i <= lo.height; i++) g.fillRect(0, Math.round(i * vph) - h, scanlines.width, h);
+}
+function drawRetro(now) {
+  const L = lctx;
+  L.fillStyle = PAL.k; L.fillRect(0, 0, lo.width, lo.height);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const raw = G.tiles[y][x], px = x * VP, py = y * VP;
+    if (raw === '#') {
+      const h = G.holes.get(y * W + x);
+      if (!h) L.drawImage(RB.brick, px, py);
+      else if (h.phase === 'dig') {
+        const rows = Math.min(VP, (Math.floor(h.t / DIG_TIME * 4) + 1) * 3);
+        L.drawImage(RB.brick, 0, rows, VP, VP - rows, px, py + rows, VP, VP - rows);
+      } else if (h.phase === 'fill') {
+        const rows = Math.max(1, Math.floor(h.t / HOLE_FILL * 4) * 3);
+        L.drawImage(RB.brick, 0, VP - rows, VP, rows, px, py + VP - rows, VP, rows);
+      }
+    } else if (raw === 'X') L.drawImage(RB.brick, px, py);
+    else if (raw === '@') L.drawImage(RB.stone, px, py);
+    else if (raw === 'H') L.drawImage(RB.ladder, px, py);
+    else if (raw === '-') L.drawImage(RB.rope, px, py);
+    else if (raw === 'S' && G.revealed && !(G.flash > 0 && ((now / 90) | 0) % 2)) L.drawImage(RB.ladder, px, py);
+  }
+  for (const k of G.gold) L.drawImage(RB.gold, (k % W) * VP, ((k / W) | 0) * VP);
+  const put = (a, color) => {
+    let px = Math.round((a.x + a.ox) * VP), py = Math.round((a.y + a.oy) * VP);
+    if (a.trapped) px += ((now / 60) | 0) % 2;
+    const f = retroFrame(a);
+    L.drawImage(figure(f, color, a.face < 0 && !f.startsWith('climb')), px, py);
+    if (a.gold) { L.fillStyle = PAL.y; L.fillRect(px + 4, py - 2, 2, 2); }
+  };
+  for (const g of G.guards) if (!g.hidden) put(g, PAL.v);
+  if (G.state !== 'dying' || ((G.timer * 10) | 0) % 2 === 0) put(G.player, PAL.w);
 
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  const sx = Math.round(G.camX * VP), sw = Math.round(viewCols() * VP);
+  ctx.drawImage(lo, sx, 0, sw, lo.height, 0, 0, cvs.width, cvs.height);
+  if (scanlines) ctx.drawImage(scanlines, 0, 0);
+}
+
+/* ===== Moderne skin: Kenney.nl sprites (CC0) packed in assets/modern.png ===== */
+const ATLAS = {"bg":[0,0,512,512],"clouds":[512,0,512,512],"brick":[0,512,128,128],"stone":[128,512,128,128],"ladder":[256,512,128,128],"coin":[384,512,128,128],"coinSide":[512,512,128,128],"torchA":[640,512,128,128],"torchB":[768,512,128,128],"rope":[896,512,128,32],"hero_stand":[0,640,80,110],"hero_walk1":[80,640,80,110],"hero_walk2":[160,640,80,110],"hero_climb1":[240,640,80,110],"hero_climb2":[320,640,80,110],"hero_hang":[400,640,80,110],"hero_fall":[480,640,80,110],"hero_action1":[560,640,80,110],"hero_hurt":[640,640,80,110],"guard_stand":[720,640,80,110],"guard_walk1":[800,640,80,110],"guard_walk2":[880,640,80,110],"guard_climb1":[0,750,80,110],"guard_climb2":[80,750,80,110],"guard_hang":[160,750,80,110],"guard_fall":[240,750,80,110],"guard_action1":[320,750,80,110],"guard_hurt":[400,750,80,110]};
+const atlas = new Image();
+let atlasReady = false;
+atlas.onload = () => { atlasReady = true; buildSkin(); drawIcons(); };
+atlas.src = 'assets/modern.png';
+let MT = {}, MC = {}, mBg = null;
+const parts = [];
+function crop(key, w, h) {
+  const [sx, sy, sw, sh] = ATLAS[key], c = canvasOf(Math.round(w), Math.round(h)), g = c.getContext('2d');
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  g.drawImage(atlas, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+const charScale = () => 1.05 * TS / 92;          // the characters' visible height is 92 of their 110 px frame
+function buildModern() {
+  if (!atlasReady) return;
+  const s = Math.round(TS * DPR);
+  MT = { brick: crop('brick', s, s), stone: crop('stone', s, s), ladder: crop('ladder', s, s),
+    coin: crop('coin', s, s), coinSide: crop('coinSide', s, s), rope: crop('rope', s, s / 4) };
+  const k = charScale() * DPR;
+  MC = {};
+  for (const key in ATLAS) if (key.startsWith('hero_') || key.startsWith('guard_')) {
+    MC[key] = crop(key, 80 * k, 110 * k); MC[key + '_L'] = flipped(MC[key]);
+  }
+  // sky, cloud band and tree line, as wide as the whole level for a slow parallax
+  const bw = Math.round(W * TS * DPR), bh = Math.round(H * TS * DPR);
+  mBg = canvasOf(bw, bh);
+  const g = mBg.getContext('2d');
+  const sky = g.createLinearGradient(0, 0, 0, bh);
+  sky.addColorStop(0, '#9fd6ff'); sky.addColorStop(1, '#e4f4ff');
+  g.fillStyle = sky; g.fillRect(0, 0, bw, bh);
+  const tile = (key, h, y, alpha) => {
+    const [sx, sy, sw, sh] = ATLAS[key];
+    g.globalAlpha = alpha;
+    for (let x = 0; x < bw; x += h) g.drawImage(atlas, sx, sy, sw, sh, x, y, h, h);
+    g.globalAlpha = 1;
+  };
+  tile('clouds', bh * .7, -bh * .18, .55);
+  tile('bg', bh, 0, .9);
+}
+function fx(kind, x, y) {
+  if (SKIN !== 'modern') return;
+  const add = (n, o) => { for (let i = 0; i < n; i++) parts.push(o(i)); };
+  const R = Math.random;
+  if (kind === 'dig') add(10, () => ({ x: x + .2 + R() * .6, y: y + .1 + R() * .3, vx: (R() - .5) * 4, vy: -1.5 - R() * 2.5, g: 14, life: .55 + R() * .2, t: 0, size: .1 + R() * .08, color: ['#c8643b', '#e98a5a', '#8f4122'][(R() * 3) | 0], sq: true }));
+  if (kind === 'gold') add(14, i => { const a = i / 14 * Math.PI * 2; return { x: x + .5, y: y + .55, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, g: 0, life: .45, t: 0, size: .09, color: i % 2 ? '#ffd84a' : '#fff6c8' }; });
+  if (kind === 'kill') add(16, () => ({ x: x + .5 + (R() - .5) * .6, y: y + .5, vx: (R() - .5) * 2, vy: -1 - R() * 2, g: -1, life: .7, t: 0, size: .16 + R() * .1, color: 'rgba(120,150,110,.8)' }));
+}
+function modernFrame(a) {
+  switch (a.pose) {
+    case 'run': return ((a.x + a.ox) * 3 | 0) % 2 ? 'walk1' : 'walk2';
+    case 'climb': return ((a.y + a.oy) * 3 | 0) % 2 ? 'climb1' : 'climb2';
+    case 'rope': return 'hang';
+    case 'fall': return 'fall';
+    case 'dig': return 'action1';
+    case 'trapped': return 'hurt';
+    default: return 'stand';
+  }
+}
+function drawModernActor(a, now, alpha = 1) {
+  const s = TS, k = charScale(), fw = 80 * k, fh = 110 * k, f = modernFrame(a);
+  let px = (a.x + a.ox) * s, py = (a.y + a.oy) * s;
+  if (a.trapped) px += Math.sin(now / 40) * s * .05 * (a.trapT < .8 ? 2 : 1);
+  const climb = f.startsWith('climb');
+  const top = f === 'hang' ? py + s * .08 - 8 * k : climb ? py + s - 104 * k : py + s - 110 * k;
+  if (!climb && f !== 'hang' && f !== 'fall' && !a.trapped) {
+    ctx.fillStyle = 'rgba(30,40,70,.2)';
+    ctx.beginPath(); ctx.ellipse(px + s / 2, py + s - 1, s * .3, s * .07, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = alpha;
+  const img = MC[(a.isGuard ? 'guard_' : 'hero_') + f + (a.face < 0 && !climb ? '_L' : '')];
+  ctx.drawImage(img, px + s / 2 - fw / 2, top, fw, fh);
+  ctx.globalAlpha = 1;
+  if (a.gold) ctx.drawImage(MT.coin, px + s * .1, top + 6 * k - s * .55, s * .8, s * .8);
+}
+function drawModern(now, dt) {
+  const s = TS;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(mBg, -G.camX * s * .4, 0, W * s, H * s);
+  ctx.save();
+  ctx.translate(-G.camX * s, 0);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const raw = G.tiles[y][x], px = x * s, py = y * s;
     if (raw === '#') {
       const h = G.holes.get(y * W + x);
-      if (!h) { ctx.drawImage(tileCache['#'], px, py, s, s); continue; }
+      if (!h) { ctx.drawImage(MT.brick, px, py, s, s); continue; }
+      ctx.fillStyle = '#3a2418';
+      if (h.phase !== 'dig') { ctx.globalAlpha = .85; ctx.fillRect(px + 1, py, s - 2, s); ctx.globalAlpha = 1; }
+      const S = MT.brick.width;
       if (h.phase === 'dig') {
-        const f = h.t / DIG_TIME;
-        ctx.drawImage(tileCache['#'], px, py, s, s);
-        ctx.fillStyle = COL.hole; ctx.fillRect(px, py, s, s * f);
-      } else {
-        ctx.fillStyle = COL.hole; ctx.fillRect(px, py, s, s);
-        if (h.phase === 'fill') {
-          const f = h.t / HOLE_FILL, hh = Math.max(1, s * f);
-          ctx.drawImage(tileCache['#'], 0, (s - hh) * DPR, s * DPR, hh * DPR, px, py + s - hh, s, hh);
-        } else if (h.t > HOLE_OPEN - 1.2 && ((now / 120) | 0) % 2) {
-          ctx.fillStyle = COL.brick; ctx.fillRect(px, py + s - 2, s, 2);
-        }
+        const f = Math.min(1, h.t / DIG_TIME), keep = 1 - f;
+        ctx.fillRect(px + 1, py, s - 2, s * f + 1);
+        if (keep > 0) ctx.drawImage(MT.brick, 0, S * f, S, S * keep, px, py + s * f, s, s * keep);
+      } else if (h.phase === 'fill') {
+        const f = Math.max(.02, h.t / HOLE_FILL);
+        ctx.drawImage(MT.brick, 0, S * (1 - f), S, S * f, px, py + s * (1 - f), s, s * f);
+      } else if (h.t > HOLE_OPEN - 1.2 && ((now / 140) | 0) % 2) {
+        ctx.fillStyle = '#e98a5a'; ctx.fillRect(px + 1, py + s - 3, s - 2, 3);
       }
-    } else if (raw === 'X') ctx.drawImage(tileCache['#'], px, py, s, s);
-    else if (raw === '@') ctx.drawImage(tileCache['@'], px, py, s, s);
-    else if (raw === 'H') ctx.drawImage(tileCache.H, px, py, s, s);
-    else if (raw === '-') ctx.drawImage(tileCache['-'], px, py, s, s);
+    } else if (raw === 'X') ctx.drawImage(MT.brick, px, py, s, s);
+    else if (raw === '@') ctx.drawImage(MT.stone, px, py, s, s);
+    else if (raw === 'H') ctx.drawImage(MT.ladder, px, py, s, s);
+    else if (raw === '-') ctx.drawImage(MT.rope, px, py + s * .02, s, s / 4);
     else if (raw === 'S' && G.revealed) {
-      ctx.globalAlpha = .6 + .4 * Math.sin(now / 160 + y * .7);
-      ctx.drawImage(tileCache.S, px, py, s, s); ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1 - G.flash * .7;
+      if (G.flash > 0) { ctx.shadowColor = '#fff3a0'; ctx.shadowBlur = 14 * G.flash; }
+      ctx.drawImage(MT.ladder, px, py, s, s);
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     }
   }
   for (const k of G.gold) {
-    const x = k % W, y = (k / W) | 0;
-    ctx.drawImage(tileCache.$, x * s, y * s, s, s);
-    const tw = (now / 400 + x * 1.3 + y) % 6;
-    if (tw < 1) { ctx.fillStyle = COL.goldHi; const a = Math.sin(tw * Math.PI) * s * .12; ctx.fillRect(x * s + s * .62 - a / 2, y * s + s * .58, a, 1.5); ctx.fillRect(x * s + s * .62 - .75, y * s + s * .58 - a / 2 + .75, 1.5, a); }
+    const x = k % W, y = (k / W) | 0, ph = now / 380 + x * .9 + y * .4;
+    const sx = .62 + .38 * Math.abs(Math.cos(ph)), bob = Math.sin(now / 420 + x) * s * .04, size = s * 1.25;
+    const cx = x * s + s / 2, cy = y * s + s * .55 + bob;
+    ctx.drawImage(MT.coin, cx - size * sx / 2, cy - size / 2, size * sx, size);
   }
-
-  for (const g of G.guards) if (!g.hidden) drawActor(g, COL.guard, COL.guardEye, now);
+  for (const g of G.guards) if (!g.hidden) drawModernActor(g, now);
   if (G.state === 'dying') {
-    if (((G.timer * 10) | 0) % 2 === 0) drawActor(p, COL.hero, COL.heroEye, now, 1 - G.timer / 1.5);
-  } else drawActor(p, COL.hero, COL.heroEye, now);
+    const p = G.player, f = G.timer / 1.5;
+    p.pose = 'trapped';
+    drawModernActor(p, now, Math.max(0, 1 - f));
+  } else drawModernActor(G.player, now);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i];
+    q.t += dt; if (q.t >= q.life) { parts.splice(i, 1); continue; }
+    q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt;
+    ctx.globalAlpha = 1 - q.t / q.life; ctx.fillStyle = q.color;
+    const r = q.size * s;
+    if (q.sq) ctx.fillRect(q.x * s - r / 2, q.y * s - r / 2, r, r);
+    else { ctx.beginPath(); ctx.arc(q.x * s, q.y * s, r / 2, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
 
+/* ===== shared ===== */
+function viewCols() { return VIEW_W / TS; }
+function clampCam(x) { return Math.max(0, Math.min(W - viewCols(), x)); }
+function buildSkin() {
+  document.documentElement.dataset.skin = SKIN;
+  if (SKIN === 'modern') buildModern(); else buildRetro();
+}
+let lastDraw = 0;
+function draw(now) {
+  const dt = Math.min(.05, lastDraw ? (now - lastDraw) / 1000 : 0); lastDraw = now;
+  if (!G.player) return;
+  updateCamera();
+  if (SKIN === 'modern' && atlasReady && mBg) drawModern(now, dt); else drawRetro(now);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  if (G.flash > 0) { ctx.fillStyle = `rgba(255,226,138,${G.flash * .25})`; ctx.fillRect(0, 0, VIEW_W, H * s); }
+  if (G.flash > 0) { ctx.fillStyle = SKIN === 'modern' ? `rgba(255,236,150,${G.flash * .3})` : `rgba(255,255,255,${G.flash * .18})`; ctx.fillRect(0, 0, VIEW_W, H * TS); }
   if (G.state === 'ready' && overlayHidden()) banner(LEVELS[G.level].name.toUpperCase(), 'Touchez une commande pour partir', now);
 }
 function banner(t1, t2, now) {
-  const s = TS, w = VIEW_W, y = H * s / 2;
-  ctx.fillStyle = 'rgba(9,10,22,.82)'; ctx.fillRect(0, y - s * 1.6, w, s * 3.2);
+  const s = TS, w = VIEW_W, y = H * s / 2, retro = SKIN !== 'modern' || !atlasReady;
+  if (retro) { ctx.fillStyle = '#000'; ctx.fillRect(0, y - s * 1.7, w, s * 3.4); ctx.fillStyle = PAL.b; ctx.fillRect(0, y - s * 1.7, w, 2); ctx.fillRect(0, y + s * 1.7 - 2, w, 2); }
+  else {
+    ctx.fillStyle = 'rgba(255,255,255,.94)';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(s, y - s * 1.6, w - 2 * s, s * 3.2, s * .6) : ctx.rect(s, y - s * 1.6, w - 2 * s, s * 3.2); ctx.fill();
+  }
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = COL.gold; ctx.font = `700 ${Math.max(14, s * .9)}px Silkscreen, monospace`;
-  ctx.fillText(`NIVEAU ${G.level + 1} · ${t1}`, w / 2, y - s * .5, w - 16);
+  ctx.fillStyle = retro ? PAL.o : '#1d2742';
+  ctx.font = retro ? `${Math.max(9, Math.round(s * .55))}px "Press Start 2P", monospace` : `700 ${Math.max(15, s * .9)}px Fredoka, system-ui, sans-serif`;
+  ctx.fillText(`NIVEAU ${G.level + 1} · ${t1}`, w / 2, y - s * .55, w - 24);
   ctx.globalAlpha = .6 + .4 * Math.sin(now / 250);
-  ctx.fillStyle = '#e9ecff'; ctx.font = `600 ${Math.max(12, s * .6)}px "Chakra Petch", system-ui, sans-serif`;
-  ctx.fillText(t2, w / 2, y + s * .6, w - 16); ctx.globalAlpha = 1;
+  ctx.fillStyle = retro ? PAL.w : '#5b6888';
+  ctx.font = retro ? `${Math.max(14, Math.round(s * .8))}px VT323, monospace` : `800 ${Math.max(12, s * .6)}px Nunito, system-ui, sans-serif`;
+  ctx.fillText(t2, w / 2, y + s * .65, w - 24); ctx.globalAlpha = 1;
 }
-function drawActor(a, color, eye, now, scale = 1) {
-  const s = TS;
-  let name = 'stand';
-  const pos = a.isGuard ? 3 : 4;
-  if (a.pose === 'run') name = ((a.x + a.ox) * pos | 0) % 2 ? 'run0' : 'run1';
-  else if (a.pose === 'climb') name = ((a.y + a.oy) * pos | 0) % 2 ? 'climb0' : 'climb1';
-  else if (a.pose === 'rope') name = (((a.x + a.ox) * pos) | 0) % 2 ? 'rope0' : 'rope1';
-  else if (a.pose === 'fall') name = 'fall';
-  else if (a.pose === 'dig') name = 'dig';
-  let px = (a.x + a.ox) * s, py = (a.y + a.oy) * s;
-  if (a.trapped) px += Math.sin(now / 40) * s * .05 * (a.trapT < .8 ? 2 : 1);
-  ctx.save();
-  ctx.translate(px + s / 2, py + s / 2);
-  if (a.face < 0 && name !== 'climb0' && name !== 'climb1') ctx.scale(-1, 1);
-  ctx.scale(scale, scale);
-  ctx.drawImage(sprite(name, color, eye), -s / 2, -s / 2, s, s);
-  ctx.restore();
-  if (a.gold) { ctx.fillStyle = COL.gold; ctx.fillRect(px + s * .4, py - s * .14, s * .2, s * .14); }
+
+/* small pictures for the rules screen and the style picker */
+function drawIcons() {
+  const modern = SKIN === 'modern' && atlasReady;
+  for (const c of document.querySelectorAll('canvas[data-icon]')) {
+    const k = c.dataset.icon, g = c.getContext('2d');
+    if (modern) {
+      c.width = c.height = 60; g.clearRect(0, 0, 60, 60);
+      const key = { gold: 'coin', brick: 'brick', ladder: 'ladder', rope: 'rope', guard: 'guard_walk1' }[k];
+      const [sx, sy, sw, sh] = ATLAS[key];
+      if (k === 'guard') g.drawImage(atlas, sx, sy, sw, sh, 8, 0, 60 * sw / sh, 60);
+      else if (k === 'rope') g.drawImage(atlas, sx, sy, sw, sh, 0, 22, 60, 15);
+      else g.drawImage(atlas, sx, sy, sw, sh, 0, 0, 60, 60);
+    } else {
+      c.width = c.height = 10; g.fillStyle = '#000'; g.fillRect(0, 0, 10, 10);
+      g.drawImage(k === 'guard' ? figure('run0', PAL.v, false) : RB[k], 0, 0);
+    }
+  }
+  for (const c of document.querySelectorAll('canvas[data-preview]')) {
+    const g = c.getContext('2d'), w = c.width, h = c.height;
+    if (c.dataset.preview === 'retro') {
+      g.imageSmoothingEnabled = false; g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+      const u = 24;
+      for (let x = 0; x < 6; x++) g.drawImage(RB.brick, x * u, h - u, u, u);
+      g.drawImage(RB.ladder, 4 * u, h - 2 * u, u, u); g.drawImage(RB.ladder, 4 * u, h - 3 * u, u, u);
+      g.drawImage(RB.gold, 2.6 * u, h - 2 * u, u, u);
+      g.drawImage(figure('run0', PAL.w, false), .8 * u, h - 2 * u, u, u);
+      g.drawImage(RB.rope, 0, 0, u, u); g.drawImage(RB.rope, u, 0, u, u); g.drawImage(RB.rope, 2 * u, 0, u, u);
+    } else if (atlasReady) {
+      const u = 24, A = (key, x, y, ww, hh) => { const [sx, sy, sw, sh] = ATLAS[key]; g.drawImage(atlas, sx, sy, sw, sh, x, y, ww, hh); };
+      g.imageSmoothingEnabled = true;
+      const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#9fd6ff'); sky.addColorStop(1, '#e4f4ff');
+      g.fillStyle = sky; g.fillRect(0, 0, w, h);
+      A('bg', 0, -8, 80, 80); A('bg', 80, -8, 80, 80);
+      for (let x = 0; x < 6; x++) A('brick', x * u, h - u, u, u);
+      A('ladder', 4 * u, h - 2 * u, u, u); A('ladder', 4 * u, h - 3 * u, u, u);
+      A('coin', 2.7 * u, h - 1.8 * u, u * .7, u * .7);
+      A('hero_walk1', .5 * u, h - u - 30, 22, 30);
+      A('rope', 0, 2, 3 * u, 6);
+    }
+  }
+  for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', String(b.dataset.skin === SKIN));
+}
+function setSkin(s) {
+  SKIN = s === 'modern' ? 'modern' : 'retro';
+  store.set('skin', SKIN);
+  parts.length = 0;
+  layout(); drawIcons(); updateHud(true);
 }
 
 /* ---------- layout ---------- */
@@ -1027,7 +1250,7 @@ function layout() {
   DPR = Math.min(3, window.devicePixelRatio || 1);
   cvs.style.width = VIEW_W + 'px'; cvs.style.height = H * TS + 'px';
   cvs.width = Math.round(VIEW_W * DPR); cvs.height = Math.round(H * TS * DPR);
-  buildTiles();
+  buildSkin();
   if (G.player) G.camX = clampCam(G.player.x + .5 - viewCols() / 2);
 }
 addEventListener('resize', layout);
@@ -1040,10 +1263,11 @@ function updateHud(force) {
   const str = [G.level + 1, G.score, goldLeft(), G.lives].join('|');
   if (str === hudCache && !force) return;
   hudCache = str;
-  $('h-level').textContent = G.level + 1;
-  $('h-score').textContent = String(G.score).padStart(6, '0');
-  $('h-gold').textContent = goldLeft();
-  $('h-lives').textContent = G.lives;
+  const retro = SKIN === 'retro', pad = (n, l) => retro ? String(n).padStart(l, '0') : String(n);
+  $('h-level').textContent = pad(G.level + 1, 3);
+  $('h-score').textContent = String(G.score).padStart(retro ? 7 : 6, '0');
+  $('h-gold').textContent = pad(goldLeft(), 2);
+  $('h-lives').textContent = pad(G.lives, 3);
 }
 const overlay = $('overlay');
 function overlayHidden() { return overlay.hidden; }
@@ -1101,14 +1325,7 @@ function setSoundIcon(on) { $('snd-wave').style.opacity = on ? 1 : .15; }
 setSoundIcon(Sound.on);
 $('btn-zoom').addEventListener('click', () => { G.zoom = !G.zoom; store.set('zoom', G.zoom); layout(); });
 
-// little icons for the rules screen
-for (const c of document.querySelectorAll('canvas[data-icon]')) {
-  const g = c.getContext('2d'), k = c.dataset.icon;
-  if (k === 'guard') { g.drawImage(sprite('run0', COL.guard, COL.guardEye), 0, 0); continue; }
-  const saved = [TS, DPR]; TS = 10; DPR = 1;
-  g.drawImage(makeTile({ gold: '$', brick: '#', ladder: 'S', rope: '-' }[k]), 0, 0);
-  [TS, DPR] = saved;
-}
+for (const b of document.querySelectorAll('.seg button')) b.addEventListener('click', () => setSkin(b.dataset.skin));
 
 /* ---------- main loop ---------- */
 let last = performance.now(), acc = 0;
@@ -1122,7 +1339,7 @@ function frame(now) {
 }
 
 function boot(saved) {
-  layout();
+  layout(); drawIcons();
   if (saved && typeof saved.level === 'number' && saved.level < LEVELS.length) {
     G.score = saved.score || 0; G.lives = saved.lives || 5;
     loadLevel(saved.level); show(null);

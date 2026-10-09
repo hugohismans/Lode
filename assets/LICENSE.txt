@@ -1,0 +1,6 @@
+assets/modern.png est un assemblage de sprites issus de deux packs de Kenney (www.kenney.nl) :
+- Platformer Characters 1  https://kenney.nl/assets/platformer-characters
+- New Platformer Pack      https://kenney.nl/assets/new-platformer-pack
+
+Licence : Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
+Utilisation libre, y compris commerciale. Crédit apprécié mais non obligatoire.
